@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ChatbotWidget from "@/components/ChatbotWidget";
+import NearbyMechanics from "@/components/NearbyMechanics";
 import { toast } from "sonner";
 
 const issueTypes = [
@@ -190,6 +191,11 @@ const RequestHelp = () => {
                 Send Help Request
               </Button>
             </form>
+
+            {/* Nearby Mechanics Section */}
+            <div className="mt-10">
+              <NearbyMechanics />
+            </div>
           </motion.div>
         </div>
       </div>
