@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { MapPin, Star, Phone, Navigation, Filter, List, Map, Loader2, AlertTriangle } from "lucide-react";
+import { MapPin, Star, Phone, Navigation, List, Map, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,15 +28,15 @@ const NearbyMechanics = () => {
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [radius, setRadius] = useState("10000");
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [radius, setRadius] = useState("8000");
   const [openNowOnly, setOpenNowOnly] = useState(false);
   const [minRating, setMinRating] = useState("0");
 
   const detectLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setError("Geolocation not supported");
+      setError("Geolocation not supported by your browser.");
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -44,7 +44,15 @@ const NearbyMechanics = () => {
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setError(null);
       },
-      () => setError("Unable to detect location. Please enable GPS.")
+      (err) => {
+        const messages: Record<number, string> = {
+          1: "Location permission denied. Please enable GPS in your browser settings.",
+          2: "Unable to determine your location. Please try again.",
+          3: "Location request timed out. Please try again.",
+        };
+        setError(messages[err.code] || "Unable to detect location.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   }, []);
 
@@ -56,6 +64,7 @@ const NearbyMechanics = () => {
     if (!userLocation) return;
     setLoading(true);
     setError(null);
+    setFallbackMessage(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke("nearby-mechanics", {
         body: {
@@ -68,10 +77,14 @@ const NearbyMechanics = () => {
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
       setPlaces(data.places || []);
+      if (data.fallback) {
+        setFallbackMessage(data.message || "No registered partners nearby. Showing Google-listed shops.");
+      }
       if ((data.places || []).length === 0) {
         toast.info("No mechanics found nearby. Try increasing the radius.");
       }
     } catch (e: any) {
+      console.error("Fetch nearby error:", e);
       setError(e.message || "Failed to fetch nearby mechanics");
       toast.error("Failed to fetch nearby mechanics");
     } finally {
@@ -89,7 +102,10 @@ const NearbyMechanics = () => {
   });
 
   const getDirectionsUrl = (place: Place) =>
-    `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
+    `https://www.google.com/maps/dir/?api=1&origin=${userLocation?.lat},${userLocation?.lng}&destination=${place.lat},${place.lng}`;
+
+  const getCallUrl = (place: Place) =>
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${place.place_id}`;
 
   return (
     <div className="space-y-4">
@@ -100,13 +116,14 @@ const NearbyMechanics = () => {
           </div>
           <h2 className="text-xl font-display font-bold text-foreground">Nearby Mechanics</h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Select value={radius} onValueChange={setRadius}>
             <SelectTrigger className="w-[130px] bg-secondary border-border text-foreground text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
               <SelectItem value="5000">Within 5 km</SelectItem>
+              <SelectItem value="8000">Within 8 km</SelectItem>
               <SelectItem value="10000">Within 10 km</SelectItem>
               <SelectItem value="20000">Within 20 km</SelectItem>
             </SelectContent>
@@ -132,6 +149,12 @@ const NearbyMechanics = () => {
           </Button>
         </div>
       </div>
+
+      {fallbackMessage && !error && (
+        <div className="p-3 rounded-lg bg-muted border border-border text-muted-foreground text-sm text-center">
+          {fallbackMessage}
+        </div>
+      )}
 
       {error && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
@@ -205,16 +228,20 @@ const NearbyMechanics = () => {
                                 )}
                               </div>
                             </div>
-                            <a
-                              href={getDirectionsUrl(place)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button size="sm" className="gradient-primary text-primary-foreground text-xs shrink-0">
-                                <Navigation className="w-3 h-3 mr-1" />
-                                Directions
-                              </Button>
-                            </a>
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                              <a href={getDirectionsUrl(place)} target="_blank" rel="noopener noreferrer">
+                                <Button size="sm" className="gradient-primary text-primary-foreground text-xs w-full">
+                                  <Navigation className="w-3 h-3 mr-1" />
+                                  Directions
+                                </Button>
+                              </a>
+                              <a href={getCallUrl(place)} target="_blank" rel="noopener noreferrer">
+                                <Button size="sm" variant="outline" className="border-border text-foreground text-xs w-full">
+                                  <Phone className="w-3 h-3 mr-1" />
+                                  Contact
+                                </Button>
+                              </a>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>

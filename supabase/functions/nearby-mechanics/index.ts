@@ -6,42 +6,51 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Simple in-memory cache (5 min TTL)
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000;
+
+function getCacheKey(lat: number, lng: number, radius: number, openNow: boolean): string {
+  // Round to ~100m precision for cache hits
+  return `${lat.toFixed(3)},${lng.toFixed(3)},${radius},${openNow}`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { latitude, longitude, radius = 10000, type = "car_repair", openNow } = await req.json();
+    const { latitude, longitude, radius = 8000, openNow = false } = await req.json();
     const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY");
-    if (!GOOGLE_MAPS_API_KEY) throw new Error("GOOGLE_MAPS_API_KEY not configured");
+
+    if (!GOOGLE_MAPS_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "GOOGLE_MAPS_API_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!latitude || !longitude) {
-      return new Response(JSON.stringify({ error: "latitude and longitude required" }), {
-        status: 400,
+      return new Response(
+        JSON.stringify({ error: "latitude and longitude required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check cache
+    const cacheKey = getCacheKey(latitude, longitude, radius, openNow);
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return new Response(JSON.stringify(cached.data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Search multiple relevant types
-    const searchTypes = [
-      "car_repair",
-      "car_dealer",
-      "gas_station",
-    ];
-
-    const keywords = [
-      "mechanic",
-      "tyre puncture",
-      "towing service",
-      "roadside assistance",
-      "battery jumpstart",
-    ];
-
-    // Do two searches: by type and by keyword for broader results
-    const typeUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=car_repair&key=${GOOGLE_MAPS_API_KEY}${openNow ? "&opennow" : ""}`;
-    
-    const keywordUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&keyword=mechanic+towing+roadside+assistance&key=${GOOGLE_MAPS_API_KEY}${openNow ? "&opennow" : ""}`;
+    // Build proper Google Places Nearby Search URLs with keyword param
+    const baseParams = `location=${latitude},${longitude}&radius=${radius}&key=${GOOGLE_MAPS_API_KEY}${openNow ? "&opennow" : ""}`;
+    const typeUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${baseParams}&type=car_repair&keyword=mechanic|car+repair|tyre+puncture|towing`;
+    const keywordUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${baseParams}&keyword=roadside+assistance|towing+service|battery+jumpstart`;
 
     const [typeRes, keywordRes] = await Promise.all([
       fetch(typeUrl),
@@ -53,6 +62,14 @@ serve(async (req) => {
       keywordRes.json(),
     ]);
 
+    // Log API status for debugging
+    if (typeData.status !== "OK" && typeData.status !== "ZERO_RESULTS") {
+      console.error("Google Places type search error:", typeData.status, typeData.error_message);
+    }
+    if (keywordData.status !== "OK" && keywordData.status !== "ZERO_RESULTS") {
+      console.error("Google Places keyword search error:", keywordData.status, keywordData.error_message);
+    }
+
     // Merge and deduplicate by place_id
     const allResults = [...(typeData.results || []), ...(keywordData.results || [])];
     const seen = new Set<string>();
@@ -62,7 +79,7 @@ serve(async (req) => {
       return true;
     });
 
-    // Calculate distance and format
+    // Calculate distance using Haversine formula and format
     const places = unique.map((place: any) => {
       const lat2 = place.geometry.location.lat;
       const lng2 = place.geometry.location.lng;
@@ -79,14 +96,14 @@ serve(async (req) => {
       return {
         place_id: place.place_id,
         name: place.name,
-        address: place.vicinity,
+        address: place.vicinity || place.formatted_address || "",
         rating: place.rating || null,
         user_ratings_total: place.user_ratings_total || 0,
         is_open: place.opening_hours?.open_now ?? null,
         distance_km: Math.round(distance * 10) / 10,
         lat: lat2,
         lng: lng2,
-        types: place.types,
+        types: place.types || [],
         photo_ref: place.photos?.[0]?.photo_reference || null,
       };
     });
@@ -94,7 +111,18 @@ serve(async (req) => {
     // Sort by distance
     places.sort((a: any, b: any) => a.distance_km - b.distance_km);
 
-    return new Response(JSON.stringify({ places }), {
+    const result = {
+      places,
+      fallback: places.length === 0,
+      message: places.length === 0
+        ? "No registered partners nearby. Showing Google-listed shops."
+        : null,
+    };
+
+    // Store in cache
+    cache.set(cacheKey, { data: result, timestamp: Date.now() });
+
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
