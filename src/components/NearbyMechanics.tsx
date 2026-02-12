@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { MapPin, Phone, Navigation, List, Map, Loader2, AlertTriangle, Wrench, Globe } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { MapPin, Phone, Navigation, List, Map, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 interface Place {
   id: string;
@@ -23,6 +25,14 @@ interface Place {
   lng: number;
 }
 
+// Fix default Leaflet marker icon paths (broken by bundlers)
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
+
 const NearbyMechanics = () => {
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,6 +40,10 @@ const NearbyMechanics = () => {
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState("8000");
+  const [mapError, setMapError] = useState(false);
+  const mapRef = useRef<L.Map | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<L.LayerGroup | null>(null);
 
   const detectLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -56,6 +70,88 @@ const NearbyMechanics = () => {
   useEffect(() => {
     detectLocation();
   }, [detectLocation]);
+
+  // Initialize Leaflet map
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    try {
+      const map = L.map(mapContainerRef.current, {
+        center: [20, 78],
+        zoom: 5,
+        scrollWheelZoom: true,
+      });
+
+      const tileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18,
+        subdomains: ["a", "b", "c"],
+      });
+
+      tileLayer.on("tileerror", () => {
+        setMapError(true);
+      });
+
+      tileLayer.addTo(map);
+      markersRef.current = L.layerGroup().addTo(map);
+      mapRef.current = map;
+
+      // Resize handling for responsive
+      const resizeObserver = new ResizeObserver(() => {
+        map.invalidateSize();
+      });
+      resizeObserver.observe(mapContainerRef.current);
+
+      return () => {
+        resizeObserver.disconnect();
+        map.remove();
+        mapRef.current = null;
+      };
+    } catch {
+      setMapError(true);
+    }
+  }, []);
+
+  // Center map on user location
+  useEffect(() => {
+    if (mapRef.current && userLocation) {
+      mapRef.current.setView([userLocation.lat, userLocation.lng], 13);
+
+      // Add user location marker
+      L.circleMarker([userLocation.lat, userLocation.lng], {
+        radius: 10,
+        fillColor: "hsl(210, 100%, 50%)",
+        color: "white",
+        weight: 2,
+        fillOpacity: 0.9,
+      })
+        .bindPopup("<b>Your Location</b>")
+        .addTo(mapRef.current);
+    }
+  }, [userLocation]);
+
+  // Update markers when places change
+  useEffect(() => {
+    if (!markersRef.current || !mapRef.current) return;
+    markersRef.current.clearLayers();
+
+    places.forEach((place) => {
+      const marker = L.marker([place.lat, place.lng]);
+      marker.bindPopup(
+        `<b>${place.name}</b><br/>${place.category}<br/>${place.distance_km} km away`
+      );
+      markersRef.current!.addLayer(marker);
+    });
+
+    // Fit bounds if we have places + user location
+    if (places.length > 0 && userLocation) {
+      const allPoints: L.LatLngExpression[] = [
+        [userLocation.lat, userLocation.lng],
+        ...places.map((p) => [p.lat, p.lng] as L.LatLngExpression),
+      ];
+      mapRef.current.fitBounds(L.latLngBounds(allPoints), { padding: [30, 30] });
+    }
+  }, [places, userLocation]);
 
   const fetchNearby = useCallback(async () => {
     if (!userLocation) return;
@@ -94,9 +190,6 @@ const NearbyMechanics = () => {
 
   const getDirectionsUrl = (place: Place) =>
     `https://www.openstreetmap.org/directions?from=${userLocation?.lat},${userLocation?.lng}&to=${place.lat},${place.lng}`;
-
-  const getLocationUrl = (place: Place) =>
-    `https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lng}#map=17/${place.lat}/${place.lng}`;
 
   const categoryColor = (cat: string) => {
     if (cat === "Tyre Shop") return "border-warning text-warning";
@@ -208,7 +301,7 @@ const NearbyMechanics = () => {
                                   </Button>
                                 </a>
                               ) : (
-                                <a href={getLocationUrl(place)} target="_blank" rel="noopener noreferrer">
+                                <a href={`https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lng}#map=17/${place.lat}/${place.lng}`} target="_blank" rel="noopener noreferrer">
                                   <Button size="sm" variant="outline" className="border-border text-foreground text-xs w-full">
                                     <MapPin className="w-3 h-3 mr-1" />
                                     View
@@ -227,20 +320,17 @@ const NearbyMechanics = () => {
           </TabsContent>
 
           <TabsContent value="map">
-            {userLocation && (
-              <div className="rounded-xl overflow-hidden border border-border">
-                <iframe
-                  width="100%"
-                  height="400"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${userLocation.lng - 0.05},${userLocation.lat - 0.05},${userLocation.lng + 0.05},${userLocation.lat + 0.05}&layer=mapnik&marker=${userLocation.lat},${userLocation.lng}`}
-                  title="Nearby Mechanics Map"
-                />
-                <p className="text-xs text-muted-foreground p-3 text-center">
-                  📍 Your location on OpenStreetMap. Use the list view for mechanic details.
-                </p>
+            {mapError ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground text-sm rounded-xl border border-border bg-card">
+                <AlertTriangle className="w-5 h-5 mr-2 text-destructive" />
+                Map failed to load. Check network connection.
               </div>
+            ) : (
+              <div
+                ref={mapContainerRef}
+                className="rounded-xl overflow-hidden border border-border"
+                style={{ height: 400, width: "100%" }}
+              />
             )}
           </TabsContent>
         </Tabs>
