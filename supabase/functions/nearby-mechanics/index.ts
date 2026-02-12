@@ -6,13 +6,23 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Simple in-memory cache (5 min TTL)
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
 
-function getCacheKey(lat: number, lng: number, radius: number, openNow: boolean): string {
-  // Round to ~100m precision for cache hits
-  return `${lat.toFixed(3)},${lng.toFixed(3)},${radius},${openNow}`;
+function getCacheKey(lat: number, lng: number, radius: number): string {
+  return `${lat.toFixed(3)},${lng.toFixed(3)},${radius}`;
+}
+
+function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 serve(async (req) => {
@@ -21,15 +31,7 @@ serve(async (req) => {
   }
 
   try {
-    const { latitude, longitude, radius = 8000, openNow = false } = await req.json();
-    const GOOGLE_MAPS_API_KEY = Deno.env.get("GOOGLE_MAPS_API_KEY");
-
-    if (!GOOGLE_MAPS_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "GOOGLE_MAPS_API_KEY not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const { latitude, longitude, radius = 8000 } = await req.json();
 
     if (!latitude || !longitude) {
       return new Response(
@@ -38,8 +40,7 @@ serve(async (req) => {
       );
     }
 
-    // Check cache
-    const cacheKey = getCacheKey(latitude, longitude, radius, openNow);
+    const cacheKey = getCacheKey(latitude, longitude, radius);
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return new Response(JSON.stringify(cached.data), {
@@ -47,79 +48,70 @@ serve(async (req) => {
       });
     }
 
-    // Build proper Google Places Nearby Search URLs with keyword param
-    const baseParams = `location=${latitude},${longitude}&radius=${radius}&key=${GOOGLE_MAPS_API_KEY}${openNow ? "&opennow" : ""}`;
-    const typeUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${baseParams}&type=car_repair&keyword=mechanic|car+repair|tyre+puncture|towing`;
-    const keywordUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${baseParams}&keyword=roadside+assistance|towing+service|battery+jumpstart`;
+    // Overpass QL query for car repair, tyre shops, and car parts
+    const overpassQuery = `
+      [out:json][timeout:15];
+      (
+        node["amenity"="car_repair"](around:${radius},${latitude},${longitude});
+        node["shop"="tyres"](around:${radius},${latitude},${longitude});
+        node["shop"="car_parts"](around:${radius},${latitude},${longitude});
+        way["amenity"="car_repair"](around:${radius},${latitude},${longitude});
+        way["shop"="tyres"](around:${radius},${latitude},${longitude});
+        way["shop"="car_parts"](around:${radius},${latitude},${longitude});
+      );
+      out center body;
+    `;
 
-    const [typeRes, keywordRes] = await Promise.all([
-      fetch(typeUrl),
-      fetch(keywordUrl),
-    ]);
-
-    const [typeData, keywordData] = await Promise.all([
-      typeRes.json(),
-      keywordRes.json(),
-    ]);
-
-    // Log API status for debugging
-    if (typeData.status !== "OK" && typeData.status !== "ZERO_RESULTS") {
-      console.error("Google Places type search error:", typeData.status, typeData.error_message);
-    }
-    if (keywordData.status !== "OK" && keywordData.status !== "ZERO_RESULTS") {
-      console.error("Google Places keyword search error:", keywordData.status, keywordData.error_message);
-    }
-
-    // Merge and deduplicate by place_id
-    const allResults = [...(typeData.results || []), ...(keywordData.results || [])];
-    const seen = new Set<string>();
-    const unique = allResults.filter((r: any) => {
-      if (seen.has(r.place_id)) return false;
-      seen.add(r.place_id);
-      return true;
+    const overpassUrl = "https://overpass-api.de/api/interpreter";
+    const res = await fetch(overpassUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `data=${encodeURIComponent(overpassQuery)}`,
     });
 
-    // Calculate distance using Haversine formula and format
-    const places = unique.map((place: any) => {
-      const lat2 = place.geometry.location.lat;
-      const lng2 = place.geometry.location.lng;
-      const R = 6371;
-      const dLat = ((lat2 - latitude) * Math.PI) / 180;
-      const dLng = ((lng2 - longitude) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos((latitude * Math.PI) / 180) *
-          Math.cos((lat2 * Math.PI) / 180) *
-          Math.sin(dLng / 2) ** 2;
-      const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    if (!res.ok) {
+      throw new Error(`Overpass API returned ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    const places = (data.elements || []).map((el: any) => {
+      const lat = el.lat ?? el.center?.lat;
+      const lng = el.lon ?? el.center?.lon;
+      if (!lat || !lng) return null;
+
+      const tags = el.tags || {};
+      const name = tags.name || tags["name:en"] || "Unnamed Shop";
+      const distance_km = Math.round(haversine(latitude, longitude, lat, lng) * 10) / 10;
+
+      let category = "Car Repair";
+      if (tags.shop === "tyres") category = "Tyre Shop";
+      else if (tags.shop === "car_parts") category = "Car Parts";
 
       return {
-        place_id: place.place_id,
-        name: place.name,
-        address: place.vicinity || place.formatted_address || "",
-        rating: place.rating || null,
-        user_ratings_total: place.user_ratings_total || 0,
-        is_open: place.opening_hours?.open_now ?? null,
-        distance_km: Math.round(distance * 10) / 10,
-        lat: lat2,
-        lng: lng2,
-        types: place.types || [],
-        photo_ref: place.photos?.[0]?.photo_reference || null,
+        id: String(el.id),
+        name,
+        category,
+        address: [tags["addr:street"], tags["addr:city"]].filter(Boolean).join(", ") || null,
+        phone: tags.phone || tags["contact:phone"] || null,
+        website: tags.website || tags["contact:website"] || null,
+        opening_hours: tags.opening_hours || null,
+        distance_km,
+        lat,
+        lng,
       };
-    });
+    }).filter(Boolean);
 
-    // Sort by distance
     places.sort((a: any, b: any) => a.distance_km - b.distance_km);
 
     const result = {
       places,
       fallback: places.length === 0,
       message: places.length === 0
-        ? "No registered partners nearby. Showing Google-listed shops."
+        ? "No mechanics found nearby on OpenStreetMap. Try increasing the radius."
         : null,
     };
 
-    // Store in cache
     cache.set(cacheKey, { data: result, timestamp: Date.now() });
 
     return new Response(JSON.stringify(result), {

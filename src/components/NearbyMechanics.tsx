@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { MapPin, Star, Phone, Navigation, List, Map, Loader2, AlertTriangle } from "lucide-react";
+import { MapPin, Phone, Navigation, List, Map, Loader2, AlertTriangle, Wrench, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,17 +11,16 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Place {
-  place_id: string;
+  id: string;
   name: string;
-  address: string;
-  rating: number | null;
-  user_ratings_total: number;
-  is_open: boolean | null;
+  category: string;
+  address: string | null;
+  phone: string | null;
+  website: string | null;
+  opening_hours: string | null;
   distance_km: number;
   lat: number;
   lng: number;
-  types: string[];
-  photo_ref: string | null;
 }
 
 const NearbyMechanics = () => {
@@ -31,8 +30,6 @@ const NearbyMechanics = () => {
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState("8000");
-  const [openNowOnly, setOpenNowOnly] = useState(false);
-  const [minRating, setMinRating] = useState("0");
 
   const detectLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -71,14 +68,13 @@ const NearbyMechanics = () => {
           latitude: userLocation.lat,
           longitude: userLocation.lng,
           radius: parseInt(radius),
-          openNow: openNowOnly,
         },
       });
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
       setPlaces(data.places || []);
       if (data.fallback) {
-        setFallbackMessage(data.message || "No registered partners nearby. Showing Google-listed shops.");
+        setFallbackMessage(data.message || "No mechanics found nearby.");
       }
       if ((data.places || []).length === 0) {
         toast.info("No mechanics found nearby. Try increasing the radius.");
@@ -90,22 +86,23 @@ const NearbyMechanics = () => {
     } finally {
       setLoading(false);
     }
-  }, [userLocation, radius, openNowOnly]);
+  }, [userLocation, radius]);
 
   useEffect(() => {
     if (userLocation) fetchNearby();
   }, [userLocation, fetchNearby]);
 
-  const filteredPlaces = places.filter((p) => {
-    if (minRating !== "0" && (p.rating === null || p.rating < parseFloat(minRating))) return false;
-    return true;
-  });
-
   const getDirectionsUrl = (place: Place) =>
-    `https://www.google.com/maps/dir/?api=1&origin=${userLocation?.lat},${userLocation?.lng}&destination=${place.lat},${place.lng}`;
+    `https://www.openstreetmap.org/directions?from=${userLocation?.lat},${userLocation?.lng}&to=${place.lat},${place.lng}`;
 
-  const getCallUrl = (place: Place) =>
-    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${place.place_id}`;
+  const getLocationUrl = (place: Place) =>
+    `https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lng}#map=17/${place.lat}/${place.lng}`;
+
+  const categoryColor = (cat: string) => {
+    if (cat === "Tyre Shop") return "border-warning text-warning";
+    if (cat === "Car Parts") return "border-accent text-accent-foreground";
+    return "border-primary text-primary";
+  };
 
   return (
     <div className="space-y-4">
@@ -116,38 +113,17 @@ const NearbyMechanics = () => {
           </div>
           <h2 className="text-xl font-display font-bold text-foreground">Nearby Mechanics</h2>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Select value={radius} onValueChange={setRadius}>
-            <SelectTrigger className="w-[130px] bg-secondary border-border text-foreground text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              <SelectItem value="5000">Within 5 km</SelectItem>
-              <SelectItem value="8000">Within 8 km</SelectItem>
-              <SelectItem value="10000">Within 10 km</SelectItem>
-              <SelectItem value="20000">Within 20 km</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={minRating} onValueChange={setMinRating}>
-            <SelectTrigger className="w-[120px] bg-secondary border-border text-foreground text-sm">
-              <SelectValue placeholder="Rating" />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              <SelectItem value="0">All ratings</SelectItem>
-              <SelectItem value="3">3+ ★</SelectItem>
-              <SelectItem value="4">4+ ★</SelectItem>
-              <SelectItem value="4.5">4.5+ ★</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant={openNowOnly ? "default" : "outline"}
-            size="sm"
-            onClick={() => setOpenNowOnly(!openNowOnly)}
-            className={openNowOnly ? "gradient-primary text-primary-foreground" : "border-border text-foreground"}
-          >
-            Open Now
-          </Button>
-        </div>
+        <Select value={radius} onValueChange={setRadius}>
+          <SelectTrigger className="w-[130px] bg-secondary border-border text-foreground text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border">
+            <SelectItem value="5000">Within 5 km</SelectItem>
+            <SelectItem value="8000">Within 8 km</SelectItem>
+            <SelectItem value="10000">Within 10 km</SelectItem>
+            <SelectItem value="20000">Within 20 km</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {fallbackMessage && !error && (
@@ -186,12 +162,12 @@ const NearbyMechanics = () => {
             <ScrollArea className="max-h-[500px]">
               <div className="space-y-3 pr-2">
                 <AnimatePresence>
-                  {filteredPlaces.length === 0 && !loading && (
+                  {places.length === 0 && !loading && (
                     <p className="text-muted-foreground text-sm text-center py-8">No mechanics found with current filters.</p>
                   )}
-                  {filteredPlaces.map((place, i) => (
+                  {places.map((place, i) => (
                     <motion.div
-                      key={place.place_id}
+                      key={place.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
@@ -201,30 +177,19 @@ const NearbyMechanics = () => {
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-foreground text-sm truncate">{place.name}</h3>
-                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{place.address}</p>
+                              {place.address && (
+                                <p className="text-xs text-muted-foreground mt-0.5 truncate">{place.address}</p>
+                              )}
                               <div className="flex items-center gap-3 mt-2 flex-wrap">
-                                {place.rating && (
-                                  <span className="flex items-center gap-1 text-xs">
-                                    <Star className="w-3 h-3 text-warning fill-warning" />
-                                    <span className="text-foreground font-medium">{place.rating}</span>
-                                    <span className="text-muted-foreground">({place.user_ratings_total})</span>
-                                  </span>
-                                )}
+                                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${categoryColor(place.category)}`}>
+                                  {place.category}
+                                </Badge>
                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                                   <Navigation className="w-3 h-3" />
                                   {place.distance_km} km
                                 </span>
-                                {place.is_open !== null && (
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-[10px] px-1.5 py-0 ${
-                                      place.is_open
-                                        ? "border-success text-success"
-                                        : "border-destructive text-destructive"
-                                    }`}
-                                  >
-                                    {place.is_open ? "Open" : "Closed"}
-                                  </Badge>
+                                {place.opening_hours && (
+                                  <span className="text-[10px] text-muted-foreground">{place.opening_hours}</span>
                                 )}
                               </div>
                             </div>
@@ -235,12 +200,21 @@ const NearbyMechanics = () => {
                                   Directions
                                 </Button>
                               </a>
-                              <a href={getCallUrl(place)} target="_blank" rel="noopener noreferrer">
-                                <Button size="sm" variant="outline" className="border-border text-foreground text-xs w-full">
-                                  <Phone className="w-3 h-3 mr-1" />
-                                  Contact
-                                </Button>
-                              </a>
+                              {place.phone ? (
+                                <a href={`tel:${place.phone}`}>
+                                  <Button size="sm" variant="outline" className="border-border text-foreground text-xs w-full">
+                                    <Phone className="w-3 h-3 mr-1" />
+                                    Call
+                                  </Button>
+                                </a>
+                              ) : (
+                                <a href={getLocationUrl(place)} target="_blank" rel="noopener noreferrer">
+                                  <Button size="sm" variant="outline" className="border-border text-foreground text-xs w-full">
+                                    <MapPin className="w-3 h-3 mr-1" />
+                                    View
+                                  </Button>
+                                </a>
+                              )}
                             </div>
                           </div>
                         </CardContent>
@@ -260,12 +234,11 @@ const NearbyMechanics = () => {
                   height="400"
                   style={{ border: 0 }}
                   loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps?q=car+repair+mechanic+towing&ll=${userLocation.lat},${userLocation.lng}&z=13&output=embed`}
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${userLocation.lng - 0.05},${userLocation.lat - 0.05},${userLocation.lng + 0.05},${userLocation.lat + 0.05}&layer=mapnik&marker=${userLocation.lat},${userLocation.lng}`}
                   title="Nearby Mechanics Map"
                 />
                 <p className="text-xs text-muted-foreground p-3 text-center">
-                  📍 Showing mechanic shops near your location. Use the list view for detailed info.
+                  📍 Your location on OpenStreetMap. Use the list view for mechanic details.
                 </p>
               </div>
             )}
