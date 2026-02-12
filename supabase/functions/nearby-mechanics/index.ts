@@ -62,18 +62,46 @@ serve(async (req) => {
       out center body;
     `;
 
-    const overpassUrl = "https://overpass-api.de/api/interpreter";
-    const res = await fetch(overpassUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `data=${encodeURIComponent(overpassQuery)}`,
-    });
+    const overpassServers = [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.kumi.systems/api/interpreter",
+      "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    ];
 
-    if (!res.ok) {
-      throw new Error(`Overpass API returned ${res.status}`);
+    let data: any = null;
+    let lastError: string = "";
+
+    for (const server of overpassServers) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
+
+        const res = await fetch(server, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `data=${encodeURIComponent(overpassQuery)}`,
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (!res.ok) {
+          lastError = `${server} returned ${res.status}`;
+          console.warn(lastError);
+          continue;
+        }
+
+        data = await res.json();
+        break;
+      } catch (e) {
+        lastError = `${server}: ${e instanceof Error ? e.message : "failed"}`;
+        console.warn(lastError);
+        continue;
+      }
     }
 
-    const data = await res.json();
+    if (!data) {
+      throw new Error(`All Overpass servers failed. Last: ${lastError}`);
+    }
 
     const places = (data.elements || []).map((el: any) => {
       const lat = el.lat ?? el.center?.lat;
