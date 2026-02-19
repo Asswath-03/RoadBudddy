@@ -1,6 +1,6 @@
 import { Wrench, Zap, Fuel, Truck, CircleDot, Bike } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const services = [
@@ -11,6 +11,41 @@ const services = [
   { icon: Fuel, title: "Fuel Delivery", description: "Ran out of fuel? We deliver to your location" },
   { icon: Truck, title: "Towing Services", description: "Safe vehicle towing to your preferred garage" },
 ];
+
+const ServiceCard = ({ service, index }: { service: typeof services[0]; index: number }) => {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30, scale: 0.95 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ delay: index * 0.1, duration: 0.5 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="group p-6 rounded-xl bg-secondary/50 border border-border hover:border-primary/40 transition-all duration-300 card-lift relative overflow-hidden"
+    >
+      {/* Gradient border glow on hover */}
+      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{
+          background: "linear-gradient(135deg, hsl(25 95% 55% / 0.05), transparent, hsl(0 85% 55% / 0.05))",
+        }}
+      />
+      <div className="relative z-10">
+        <motion.div
+          animate={hovered ? { rotateY: 360 } : { rotateY: 0 }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+          className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4"
+          style={{ perspective: 600 }}
+        >
+          <service.icon className="w-6 h-6 text-primary-foreground" />
+        </motion.div>
+        <h3 className="text-xl font-display font-semibold text-foreground mb-2">{service.title}</h3>
+        <p className="text-muted-foreground">{service.description}</p>
+      </div>
+    </motion.div>
+  );
+};
 
 const ServicesSection = () => {
   const ref = useRef<HTMLElement>(null);
@@ -37,20 +72,7 @@ const ServicesSection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service, i) => (
-            <motion.div
-              key={service.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="group p-6 rounded-xl bg-secondary/50 border border-border hover:border-primary/30 transition-all duration-300 hover:glow-primary"
-            >
-              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <service.icon className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <h3 className="text-xl font-display font-semibold text-foreground mb-2">{service.title}</h3>
-              <p className="text-muted-foreground">{service.description}</p>
-            </motion.div>
+            <ServiceCard key={service.title} service={service} index={i} />
           ))}
         </div>
       </motion.div>
