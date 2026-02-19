@@ -1,18 +1,25 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
+  const ref = useRef<HTMLElement>(null);
+  const isMobile = useIsMobile();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0">
+    <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Background with parallax */}
+      <motion.div className="absolute inset-0" style={isMobile ? {} : { y: bgY }}>
         <img src={heroBg} alt="Roadside assistance at dusk" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
-      </div>
+      </motion.div>
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
+      <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
 
       <div className="relative z-10 container mx-auto px-4 pt-20">
         <motion.div

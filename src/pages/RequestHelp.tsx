@@ -11,6 +11,7 @@ import Footer from "@/components/Footer";
 import ChatbotWidget from "@/components/ChatbotWidget";
 import NearbyMechanics from "@/components/NearbyMechanics";
 import { toast } from "sonner";
+import IndianPhoneInput from "@/components/IndianPhoneInput";
 
 const issueTypes = [
   "Tyre Puncture",
@@ -37,7 +38,10 @@ const RequestHelp = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would call the backend
+    if (!/^[6-9]\d{9}$/.test(formData.phone.replace(/\D/g, ""))) {
+      toast.error("Enter a valid Indian mobile number.");
+      return;
+    }
     toast.success("Help request submitted! A mechanic will be assigned shortly.");
     setSubmitted(true);
   };
@@ -117,14 +121,11 @@ const RequestHelp = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-foreground">Phone Number</Label>
-                  <Input
+                  <IndianPhoneInput
                     id="phone"
                     required
-                    type="tel"
-                    placeholder="+1 (555) 000-0000"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                    onChange={(v) => setFormData({ ...formData, phone: v })}
                   />
                 </div>
               </div>

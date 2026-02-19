@@ -10,6 +10,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ChatbotWidget from "@/components/ChatbotWidget";
 import { toast } from "sonner";
+import IndianPhoneInput from "@/components/IndianPhoneInput";
 
 const serviceOptions = [
   "Tyre Puncture Repair",
@@ -43,6 +44,10 @@ const JoinPartner = () => {
     e.preventDefault();
     if (selectedServices.length === 0) {
       toast.error("Please select at least one service.");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(formData.phone.replace(/\D/g, ""))) {
+      toast.error("Enter a valid Indian mobile number.");
       return;
     }
     toast.success("Partner application submitted! We'll review and get back to you.");
@@ -109,14 +114,11 @@ const JoinPartner = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-foreground">Phone Number</Label>
-                  <Input
+                  <IndianPhoneInput
                     id="phone"
                     required
-                    type="tel"
-                    placeholder="+1 (555) 000-0000"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                    onChange={(v) => setFormData({ ...formData, phone: v })}
                   />
                 </div>
               </div>

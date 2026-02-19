@@ -1,5 +1,7 @@
 import { Wrench, Zap, Fuel, Truck, CircleDot, Bike } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const services = [
   { icon: CircleDot, title: "Tyre Puncture Repair", description: "Quick tyre fixes and replacements on-site" },
@@ -11,9 +13,14 @@ const services = [
 ];
 
 const ServicesSection = () => {
+  const ref = useRef<HTMLElement>(null);
+  const isMobile = useIsMobile();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const contentY = useTransform(scrollYProgress, [0, 1], ["50px", "-50px"]);
+
   return (
-    <section id="services" className="py-24 bg-card">
-      <div className="container mx-auto px-4">
+    <section ref={ref} id="services" className="py-24 bg-card relative overflow-hidden">
+      <motion.div className="container mx-auto px-4" style={isMobile ? {} : { y: contentY }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -46,7 +53,7 @@ const ServicesSection = () => {
             </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };
