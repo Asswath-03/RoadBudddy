@@ -1,5 +1,7 @@
 import { MapPin, Search, CheckCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const steps = [
   { icon: MapPin, title: "Share Your Location", description: "We detect your GPS or you pin your breakdown spot" },
@@ -8,9 +10,14 @@ const steps = [
 ];
 
 const HowItWorks = () => {
+  const ref = useRef<HTMLElement>(null);
+  const isMobile = useIsMobile();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const contentY = useTransform(scrollYProgress, [0, 1], ["40px", "-40px"]);
+
   return (
-    <section className="py-24">
-      <div className="container mx-auto px-4">
+    <section ref={ref} className="py-24 relative overflow-hidden">
+      <motion.div className="container mx-auto px-4" style={isMobile ? {} : { y: contentY }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -46,7 +53,7 @@ const HowItWorks = () => {
             </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };
