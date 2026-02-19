@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      partner_applications: {
+        Row: {
+          availability: string | null
+          created_at: string
+          garage_address: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          phone: string
+          services: string[]
+          status: string
+          travel_radius: string | null
+          updated_at: string
+        }
+        Insert: {
+          availability?: string | null
+          created_at?: string
+          garage_address: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          phone: string
+          services?: string[]
+          status?: string
+          travel_radius?: string | null
+          updated_at?: string
+        }
+        Update: {
+          availability?: string | null
+          created_at?: string
+          garage_address?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          phone?: string
+          services?: string[]
+          status?: string
+          travel_radius?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
