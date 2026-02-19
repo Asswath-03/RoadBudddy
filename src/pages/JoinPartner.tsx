@@ -11,6 +11,8 @@ import Footer from "@/components/Footer";
 import ChatbotWidget from "@/components/ChatbotWidget";
 import { toast } from "sonner";
 import IndianPhoneInput from "@/components/IndianPhoneInput";
+import LocationPicker from "@/components/LocationPicker";
+import { supabase } from "@/integrations/supabase/client";
 
 const serviceOptions = [
   "Tyre Puncture Repair",
@@ -25,7 +27,9 @@ const radiusOptions = ["5 km", "10 km", "15 km", "20 km", "30 km+"];
 
 const JoinPartner = () => {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -40,7 +44,7 @@ const JoinPartner = () => {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedServices.length === 0) {
       toast.error("Please select at least one service.");
@@ -50,8 +54,29 @@ const JoinPartner = () => {
       toast.error("Enter a valid Indian mobile number.");
       return;
     }
-    toast.success("Partner application submitted! We'll review and get back to you.");
-    setSubmitted(true);
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("partner_applications").insert({
+        name: formData.name.trim(),
+        phone: `+91${formData.phone.replace(/\D/g, "")}`,
+        garage_address: formData.garageLocation.trim(),
+        latitude: coords?.lat ?? null,
+        longitude: coords?.lng ?? null,
+        travel_radius: formData.radius || null,
+        availability: formData.availability || null,
+        services: selectedServices,
+      });
+
+      if (error) throw error;
+      toast.success("Partner application submitted! We'll review and get back to you.");
+      setSubmitted(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to submit. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -125,13 +150,12 @@ const JoinPartner = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="garage" className="text-foreground">Garage / Workshop Location</Label>
-                <Input
+                <LocationPicker
                   id="garage"
                   required
-                  placeholder="Full address of your garage"
-                  value={formData.garageLocation}
-                  onChange={(e) => setFormData({ ...formData, garageLocation: e.target.value })}
-                  className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                  address={formData.garageLocation}
+                  onAddressChange={(v) => setFormData({ ...formData, garageLocation: v })}
+                  onLocationDetected={(data) => setCoords({ lat: data.latitude, lng: data.longitude })}
                 />
               </div>
 
@@ -187,9 +211,14 @@ const JoinPartner = () => {
                 </div>
               </div>
 
-              <Button type="submit" size="lg" className="w-full gradient-primary text-primary-foreground glow-primary font-bold text-lg py-6">
+              <Button
+                type="submit"
+                size="lg"
+                disabled={submitting}
+                className="w-full gradient-primary text-primary-foreground glow-primary font-bold text-lg py-6"
+              >
                 <Handshake className="w-5 h-5 mr-2" />
-                Submit Application
+                {submitting ? "Submitting..." : "Submit Application"}
               </Button>
             </form>
           </motion.div>
