@@ -89,12 +89,42 @@ export default {
           to: { height: "0" },
         },
         "pulse-glow": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.6" },
+          "0%, 100%": { opacity: "1", boxShadow: "0 0 20px hsl(var(--primary) / 0.4)" },
+          "50%": { opacity: "0.8", boxShadow: "0 0 40px hsl(var(--primary) / 0.6), 0 0 80px hsl(var(--primary) / 0.2)" },
         },
         "float": {
           "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-10px)" },
+          "50%": { transform: "translateY(-12px)" },
+        },
+        "float-delayed": {
+          "0%, 100%": { transform: "translateY(0px) rotate(0deg)" },
+          "50%": { transform: "translateY(-8px) rotate(3deg)" },
+        },
+        "gradient-shift": {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 20px hsl(0 85% 55% / 0.3), 0 0 40px hsl(0 85% 55% / 0.1)" },
+          "50%": { boxShadow: "0 0 30px hsl(0 85% 55% / 0.5), 0 0 60px hsl(0 85% 55% / 0.2), 0 0 100px hsl(0 85% 55% / 0.1)" },
+        },
+        "icon-spin": {
+          "0%": { transform: "rotateY(0deg)" },
+          "100%": { transform: "rotateY(360deg)" },
+        },
+        "sweep": {
+          "0%": { transform: "translateX(-100%) skewX(-15deg)" },
+          "100%": { transform: "translateX(200%) skewX(-15deg)" },
+        },
+        "marker-drop": {
+          "0%": { transform: "translateY(-30px)", opacity: "0" },
+          "60%": { transform: "translateY(4px)", opacity: "1" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        "ripple": {
+          "0%": { transform: "scale(0)", opacity: "0.5" },
+          "100%": { transform: "scale(4)", opacity: "0" },
         },
       },
       animation: {
@@ -102,6 +132,13 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "float": "float 3s ease-in-out infinite",
+        "float-delayed": "float-delayed 4s ease-in-out infinite",
+        "gradient-shift": "gradient-shift 6s ease infinite",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "icon-spin": "icon-spin 0.6s ease-in-out",
+        "sweep": "sweep 3s ease-in-out infinite",
+        "marker-drop": "marker-drop 0.5s ease-out",
+        "ripple": "ripple 0.6s ease-out",
       },
     },
   },

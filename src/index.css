@@ -105,4 +105,90 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* Gradient border glow for cards */
+  .gradient-border-glow {
+    position: relative;
+  }
+  .gradient-border-glow::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, hsl(25, 95%, 55%), hsl(0, 85%, 55%), hsl(25, 95%, 55%));
+    background-size: 200% 200%;
+    animation: gradient-shift 4s ease infinite;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+  }
+  .gradient-border-glow:hover::before {
+    opacity: 1;
+  }
+
+  /* Button sweep effect */
+  .btn-sweep {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-sweep::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.15), transparent);
+    transform: skewX(-15deg);
+    transition: left 0.5s ease;
+  }
+  .btn-sweep:hover::after {
+    left: 150%;
+  }
+
+  /* Nav link underline animation */
+  .nav-link-animated {
+    position: relative;
+  }
+  .nav-link-animated::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: hsl(25, 95%, 55%);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s ease;
+  }
+  .nav-link-animated:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* Card lift hover */
+  .card-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px hsl(0 0% 0% / 0.3), 0 0 20px hsl(25 95% 55% / 0.1);
+  }
+
+  /* Light sweep for footer */
+  .light-sweep {
+    position: relative;
+    overflow: hidden;
+  }
+  .light-sweep::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsl(25 95% 55% / 0.03), transparent);
+    animation: sweep 8s ease-in-out infinite;
+  }
 }
