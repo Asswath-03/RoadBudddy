@@ -36,10 +36,8 @@ const IndianPhoneInput = ({ value, onChange, id, required, className }: IndianPh
         </span>
         <Input
           id={id}
-          required={required}
           type="tel"
           inputMode="numeric"
-          pattern="[0-9]*"
           placeholder="XXXXX XXXXX"
           value={formatPhone(digits)}
           onChange={handleChange}
@@ -48,7 +46,7 @@ const IndianPhoneInput = ({ value, onChange, id, required, className }: IndianPh
         />
       </div>
       {showError && (
-        <p className="text-xs text-destructive">Enter a valid Indian mobile number</p>
+        <p className="text-xs text-destructive">Enter a valid 10-digit Indian mobile number</p>
       )}
     </div>
   );
