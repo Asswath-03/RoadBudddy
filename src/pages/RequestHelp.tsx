@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ChatbotWidget from "@/components/ChatbotWidget";
+import ParallaxBackground from "@/components/ParallaxBackground";
 import NearbyMechanics from "@/components/NearbyMechanics";
 import { toast } from "sonner";
 import IndianPhoneInput from "@/components/IndianPhoneInput";
@@ -63,7 +64,7 @@ const RequestHelp = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background">
+      <ParallaxBackground>
         <Navbar />
         <div className="pt-24 pb-16 flex items-center justify-center min-h-screen">
           <motion.div
@@ -84,12 +85,12 @@ const RequestHelp = () => {
           </motion.div>
         </div>
         <Footer />
-      </div>
+      </ParallaxBackground>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <ParallaxBackground>
       <Navbar />
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-2xl">
@@ -106,7 +107,7 @@ const RequestHelp = () => {
               Tell us what happened and we'll dispatch help immediately.
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-6 bg-card rounded-xl border border-border p-6 md:p-8">
+            <form onSubmit={handleSubmit} className="space-y-6 glass-strong rounded-xl p-6 md:p-8 depth-shadow">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-foreground">Full Name</Label>
@@ -202,7 +203,7 @@ const RequestHelp = () => {
       </div>
       <Footer />
       <ChatbotWidget />
-    </div>
+    </ParallaxBackground>
   );
 };
 

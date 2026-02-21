@@ -191,4 +191,72 @@
     background: linear-gradient(90deg, transparent, hsl(25 95% 55% / 0.03), transparent);
     animation: sweep 8s ease-in-out infinite;
   }
+
+  /* Glassmorphism */
+  .glass {
+    background: hsl(220 18% 10% / 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsl(220 15% 18% / 0.6);
+  }
+
+  .glass-strong {
+    background: hsl(220 18% 10% / 0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid hsl(220 15% 20% / 0.5);
+  }
+
+  /* Section radial glow */
+  .section-glow-primary {
+    position: relative;
+  }
+  .section-glow-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(25 95% 55% / 0.4), transparent);
+  }
+
+  .section-glow-accent {
+    position: relative;
+  }
+  .section-glow-accent::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(0 85% 55% / 0.3), transparent);
+  }
+
+  /* Depth shadow for cards */
+  .depth-shadow {
+    box-shadow: 0 8px 32px hsl(0 0% 0% / 0.4), 0 0 0 1px hsl(220 15% 18% / 0.3);
+  }
+
+  /* Hero light sweep animation */
+  .hero-sweep::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsl(25 95% 55% / 0.06), transparent);
+    transform: skewX(-20deg);
+    animation: hero-sweep-move 6s ease-in-out infinite;
+  }
+
+  @keyframes hero-sweep-move {
+    0% { left: -100%; }
+    50% { left: 120%; }
+    100% { left: 120%; }
+  }
 }

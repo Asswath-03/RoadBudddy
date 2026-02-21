@@ -16,7 +16,7 @@ const HowItWorks = () => {
   const contentY = useTransform(scrollYProgress, [0, 1], ["40px", "-40px"]);
 
   return (
-    <section ref={ref} className="py-24 relative overflow-hidden">
+    <section ref={ref} className="py-24 relative overflow-hidden section-glow-accent">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
