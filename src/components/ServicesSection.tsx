@@ -23,7 +23,7 @@ const ServiceCard = ({ service, index }: { service: typeof services[0]; index: n
       transition={{ delay: index * 0.1, duration: 0.5 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="group p-6 rounded-xl bg-secondary/50 border border-border hover:border-primary/40 transition-all duration-300 card-lift relative overflow-hidden"
+      className="group p-6 rounded-xl glass border border-border/50 hover:border-primary/40 transition-all duration-300 card-lift relative overflow-hidden depth-shadow"
     >
       {/* Gradient border glow on hover */}
       <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -54,7 +54,7 @@ const ServicesSection = () => {
   const contentY = useTransform(scrollYProgress, [0, 1], ["50px", "-50px"]);
 
   return (
-    <section ref={ref} id="services" className="py-24 bg-card relative overflow-hidden">
+    <section ref={ref} id="services" className="py-24 relative overflow-hidden section-glow-primary">
       <motion.div className="container mx-auto px-4" style={isMobile ? {} : { y: contentY }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

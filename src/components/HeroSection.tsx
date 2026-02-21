@@ -46,7 +46,7 @@ const HeroSection = () => {
   }, [displayed, typing, headlineIdx]);
 
   return (
-    <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden hero-sweep">
       {/* Background with parallax */}
       <motion.div className="absolute inset-0" style={isMobile ? {} : { y: bgY }}>
         <img src={heroBg} alt="Roadside assistance at dusk" className="w-full h-full object-cover scale-110" />
