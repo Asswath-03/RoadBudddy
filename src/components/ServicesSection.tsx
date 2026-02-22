@@ -2,6 +2,7 @@ import { Wrench, Zap, Fuel, Truck, CircleDot, Bike } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import TiltCard from "@/components/TiltCard";
 
 const services = [
   { icon: CircleDot, title: "Tyre Puncture Repair", description: "Quick tyre fixes and replacements on-site" },
@@ -16,34 +17,30 @@ const ServiceCard = ({ service, index }: { service: typeof services[0]; index: n
   const [hovered, setHovered] = useState(false);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ delay: index * 0.1, duration: 0.5 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="group p-6 rounded-xl glass border border-border/50 hover:border-primary/40 transition-all duration-300 card-lift relative overflow-hidden depth-shadow"
-    >
-      {/* Gradient border glow on hover */}
-      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{
-          background: "linear-gradient(135deg, hsl(25 95% 55% / 0.05), transparent, hsl(0 85% 55% / 0.05))",
-        }}
-      />
-      <div className="relative z-10">
-        <motion.div
-          animate={hovered ? { rotateY: 360 } : { rotateY: 0 }}
-          transition={{ duration: 0.6, ease: "easeInOut" }}
-          className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4"
-          style={{ perspective: 600 }}
-        >
-          <service.icon className="w-6 h-6 text-primary-foreground" />
-        </motion.div>
-        <h3 className="text-xl font-display font-semibold text-foreground mb-2">{service.title}</h3>
-        <p className="text-muted-foreground">{service.description}</p>
-      </div>
-    </motion.div>
+    <TiltCard className="group" glowColor="hsl(25, 95%, 55%)">
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ delay: index * 0.1, duration: 0.5 }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className="p-6 rounded-xl glass border border-border/50 hover:border-primary/40 transition-all duration-300 card-lift relative overflow-hidden depth-shadow"
+      >
+        <div className="relative z-10">
+          <motion.div
+            animate={hovered ? { rotateY: 360 } : { rotateY: 0 }}
+            transition={{ duration: 0.6, ease: "easeInOut" }}
+            className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4"
+            style={{ perspective: 600 }}
+          >
+            <service.icon className="w-6 h-6 text-primary-foreground" />
+          </motion.div>
+          <h3 className="text-xl font-display font-semibold text-foreground mb-2">{service.title}</h3>
+          <p className="text-muted-foreground">{service.description}</p>
+        </div>
+      </motion.div>
+    </TiltCard>
   );
 };
 
