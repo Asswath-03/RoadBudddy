@@ -259,4 +259,29 @@
     50% { left: 120%; }
     100% { left: 120%; }
   }
+
+  /* SOS heartbeat pulse */
+  .heartbeat-sos {
+    animation: heartbeat-sos 1.5s ease-in-out infinite, glow-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes heartbeat-sos {
+    0%, 100% { transform: scale(1); }
+    15% { transform: scale(1.04); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.02); }
+    60% { transform: scale(1); }
+  }
+
+  /* Input shake on invalid */
+  .shake-invalid {
+    animation: shake 0.4s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-4px); }
+  }
 }

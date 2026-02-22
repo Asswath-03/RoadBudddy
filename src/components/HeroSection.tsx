@@ -5,6 +5,8 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import heroBg from "@/assets/hero-bg.jpg";
+import ScrollCar from "@/components/ScrollCar";
+import MagneticButton from "@/components/MagneticButton";
 
 const headlines = [
   "when you need it most.",
@@ -129,17 +131,21 @@ const HeroSection = () => {
             transition={{ delay: 0.7 }}
             className="flex flex-col sm:flex-row gap-4"
           >
-            <Link to="/request-help">
-              <Button size="lg" className="gradient-emergency text-primary-foreground animate-glow-pulse btn-sweep font-bold text-lg px-8 py-6 w-full sm:w-auto">
-                Request Help Now
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-            <Link to="/join-partner">
-              <Button size="lg" variant="outline" className="border-border text-foreground hover:bg-secondary btn-sweep font-semibold text-lg px-8 py-6 w-full sm:w-auto">
-                Become a Partner
-              </Button>
-            </Link>
+            <MagneticButton>
+              <Link to="/request-help">
+                <Button size="lg" className="gradient-emergency text-primary-foreground animate-glow-pulse btn-sweep font-bold text-lg px-8 py-6 w-full sm:w-auto heartbeat-sos">
+                  Request Help Now
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+            </MagneticButton>
+            <MagneticButton>
+              <Link to="/join-partner">
+                <Button size="lg" variant="outline" className="border-border text-foreground hover:bg-secondary btn-sweep font-semibold text-lg px-8 py-6 w-full sm:w-auto">
+                  Become a Partner
+                </Button>
+              </Link>
+            </MagneticButton>
           </motion.div>
 
           {/* Stats */}
@@ -166,6 +172,11 @@ const HeroSection = () => {
             ))}
           </motion.div>
         </motion.div>
+      </div>
+
+      {/* Scroll-linked car animation */}
+      <div className="absolute bottom-0 left-0 right-0 z-10">
+        <ScrollCar />
       </div>
     </section>
   );
