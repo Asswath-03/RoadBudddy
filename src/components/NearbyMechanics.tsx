@@ -23,6 +23,7 @@ interface Place {
   distance_km: number;
   lat: number;
   lng: number;
+  place_id?: string;
 }
 
 // Fix default Leaflet marker icon paths (broken by bundlers)
@@ -188,20 +189,11 @@ const NearbyMechanics = () => {
     if (userLocation) fetchNearby();
   }, [userLocation, fetchNearby]);
 
-  const focusPlace = (place: Place) => {
-    if (!mapRef.current) return;
-    mapRef.current.setView([place.lat, place.lng], 16);
-    markersRef.current?.eachLayer((layer) => {
-      if (layer instanceof L.Marker) {
-        const ll = layer.getLatLng();
-        if (Math.abs(ll.lat - place.lat) < 0.0001 && Math.abs(ll.lng - place.lng) < 0.0001) {
-          layer.openPopup();
-        }
-      }
-    });
-    // Switch to map tab
-    const mapTab = document.querySelector('[data-value="map"]') as HTMLElement;
-    mapTab?.click();
+  const openInGoogleMaps = (place: Place) => {
+    const url = place.place_id
+      ? `https://www.google.com/maps/place/?q=place_id:${place.place_id}`
+      : `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const categoryColor = (cat: string) => {
@@ -300,9 +292,9 @@ const NearbyMechanics = () => {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1.5 shrink-0">
-                              <Button size="sm" className="gradient-primary text-primary-foreground text-xs w-full" onClick={() => focusPlace(place)}>
+                              <Button size="sm" className="gradient-primary text-primary-foreground text-xs w-full" onClick={() => openInGoogleMaps(place)}>
                                 <MapPin className="w-3 h-3 mr-1" />
-                                View on Map
+                                View
                               </Button>
                               {place.phone && (
                                 <a href={`tel:${place.phone}`}>
