@@ -57,7 +57,8 @@
 }
 
 html {
-  scroll-behavior: auto;
+  /* enable smooth scrolling for the entire page */
+  scroll-behavior: smooth;
 }
 
 @layer base {
