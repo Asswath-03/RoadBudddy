@@ -21,6 +21,7 @@ const AnimatedRoutes = () => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -12 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
+        style={{ minHeight: "100vh", overflowY: "auto" }}
       >
         <Routes location={location}>
           <Route path="/" element={<Index />} />

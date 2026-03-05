@@ -56,9 +56,11 @@
   }
 }
 
-html {
-  /* enable smooth scrolling for the entire page */
+html,
+body {
   scroll-behavior: smooth;
+  height: auto;
+  overflow-y: auto;
 }
 
 @layer base {
@@ -67,13 +69,16 @@ html {
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    overflow-x: clip;
-    background: #070d18;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: #F8FAFC;
+    min-height: 100vh;
+    height: auto;
   }
 
   h1,
@@ -330,15 +335,13 @@ html {
   .cinematic-parallax-back {
     z-index: 1;
     filter: blur(0.3px) saturate(0.88);
-    transform: translate3d(0, calc(var(--smooth-scroll-y, 0px) * -0.26), 0)
-      scale(calc(1.04 + (var(--smooth-scroll-progress, 0) * 0.08)));
+    transform: translate3d(0, calc(var(--smooth-scroll-y, 0px) * -0.26), 0) scale(calc(1.04 + (var(--smooth-scroll-progress, 0) * 0.08)));
   }
 
   .cinematic-parallax-mid {
     z-index: 2;
     backdrop-filter: blur(1.4px);
-    transform: translate3d(var(--smooth-scroll-drift, 0px), calc(var(--smooth-scroll-y, 0px) * -0.56), 0)
-      scale(1.08);
+    transform: translate3d(var(--smooth-scroll-drift, 0px), calc(var(--smooth-scroll-y, 0px) * -0.56), 0) scale(1.08);
   }
 
   .cinematic-button {
@@ -372,15 +375,19 @@ html {
   }
 
   @keyframes iconFloat {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0);
     }
+
     50% {
       transform: translateY(-5px);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
+
     .cinematic-parallax-layer,
     .cinematic-button,
     .cinematic-card,
