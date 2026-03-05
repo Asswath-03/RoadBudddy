@@ -64,8 +64,7 @@ const RequestHelp = () => {
 
   if (submitted) {
     return (
-      <ParallaxBackground>
-        <Navbar />
+      <ParallaxBackground fixedOverlay={<><Navbar /><ChatbotWidget /></>}>
         <div className="pt-24 pb-16 flex items-center justify-center min-h-screen">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
@@ -90,24 +89,23 @@ const RequestHelp = () => {
   }
 
   return (
-    <ParallaxBackground>
-      <Navbar />
+    <ParallaxBackground fixedOverlay={<><Navbar /><ChatbotWidget /></>}>
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-2xl">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg gradient-emergency flex items-center justify-center animate-pulse-glow">
-                <AlertTriangle className="w-5 h-5 text-primary-foreground" />
+              <div className="w-10 h-10 rounded-lg bg-[#1D4ED8] flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-                Request <span className="text-gradient-emergency">Help</span>
+              <h1 className="text-3xl md:text-4xl font-bold text-[#0F172A]">
+                Request <span className="text-[#1D4ED8]">Help</span>
               </h1>
             </div>
             <p className="text-muted-foreground mb-8 ml-[52px]">
               Tell us what happened and we'll dispatch help immediately.
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-6 glass-strong rounded-xl p-6 md:p-8 depth-shadow">
+            <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-xl p-6 md:p-8 border border-[#E2E8F0] shadow-[0_4px_16px_rgb(0_0_0/0.06)]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-foreground">Full Name</Label>
@@ -188,7 +186,7 @@ const RequestHelp = () => {
                 />
               </div>
 
-              <Button type="submit" size="lg" className="w-full gradient-emergency text-primary-foreground glow-emergency font-bold text-lg py-6">
+              <Button type="submit" size="lg" className="w-full bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-semibold text-lg py-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
                 <Send className="w-5 h-5 mr-2" />
                 Send Help Request
               </Button>
@@ -202,7 +200,6 @@ const RequestHelp = () => {
         </div>
       </div>
       <Footer />
-      <ChatbotWidget />
     </ParallaxBackground>
   );
 };

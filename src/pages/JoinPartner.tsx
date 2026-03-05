@@ -82,155 +82,151 @@ const JoinPartner = () => {
 
   if (submitted) {
     return (
-      <ParallaxBackground>
-      <div className="min-h-screen">
-        <Navbar />
-        <div className="pt-24 pb-16 flex items-center justify-center min-h-screen">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="text-center max-w-md mx-auto px-4"
-          >
-            <div className="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-success" />
-            </div>
-            <h2 className="text-3xl font-display font-bold text-foreground mb-4">Application Received!</h2>
-            <p className="text-muted-foreground mb-8">
-              Our team will review your application and contact you within 24-48 hours.
-            </p>
-            <Button onClick={() => setSubmitted(false)} variant="outline" className="border-border text-foreground hover:bg-secondary">
-              Submit Another
-            </Button>
-          </motion.div>
+      <ParallaxBackground fixedOverlay={<><Navbar /><ChatbotWidget /></>}>
+        <div className="min-h-screen">
+          <div className="pt-24 pb-16 flex items-center justify-center min-h-screen">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-center max-w-md mx-auto px-4"
+            >
+              <div className="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-10 h-10 text-success" />
+              </div>
+              <h2 className="text-3xl font-display font-bold text-foreground mb-4">Application Received!</h2>
+              <p className="text-muted-foreground mb-8">
+                Our team will review your application and contact you within 24-48 hours.
+              </p>
+              <Button onClick={() => setSubmitted(false)} variant="outline" className="border-border text-foreground hover:bg-secondary">
+                Submit Another
+              </Button>
+            </motion.div>
+          </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
       </ParallaxBackground>
     );
   }
 
   return (
-    <ParallaxBackground>
-    <div className="min-h-screen">
-      <Navbar />
-      <div className="pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-2xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-                <Handshake className="w-5 h-5 text-primary-foreground" />
+    <ParallaxBackground fixedOverlay={<><Navbar /><ChatbotWidget /></>}>
+      <div className="min-h-screen">
+        <div className="pt-24 pb-16">
+          <div className="container mx-auto px-4 max-w-2xl">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+                  <Handshake className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
+                  Become a <span className="text-gradient-primary">Partner</span>
+                </h1>
               </div>
-              <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-                Become a <span className="text-gradient-primary">Partner</span>
-              </h1>
-            </div>
-            <p className="text-muted-foreground mb-8 ml-[52px]">
-              Join our network and help stranded travelers in your area.
-            </p>
+              <p className="text-muted-foreground mb-8 ml-[52px]">
+                Join our network and help stranded travelers in your area.
+              </p>
 
-            <form onSubmit={handleSubmit} className="space-y-6 glass-strong rounded-xl p-6 md:p-8 depth-shadow">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-xl p-6 md:p-8 border border-[#E2E8F0] shadow-[0_4px_16px_rgb(0_0_0/0.06)]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-foreground">Full Name</Label>
+                    <Input
+                      id="name"
+                      required
+                      placeholder="Your name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-foreground">Phone Number</Label>
+                    <IndianPhoneInput
+                      id="phone"
+                      required
+                      value={formData.phone}
+                      onChange={(v) => setFormData({ ...formData, phone: v })}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-foreground">Full Name</Label>
-                  <Input
-                    id="name"
+                  <Label htmlFor="garage" className="text-foreground">Garage / Workshop Location</Label>
+                  <LocationPicker
+                    id="garage"
                     required
-                    placeholder="Your name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                    address={formData.garageLocation}
+                    onAddressChange={(v) => setFormData({ ...formData, garageLocation: v })}
+                    onLocationDetected={(data) => setCoords({ lat: data.latitude, lng: data.longitude })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-foreground">Phone Number</Label>
-                  <IndianPhoneInput
-                    id="phone"
-                    required
-                    value={formData.phone}
-                    onChange={(v) => setFormData({ ...formData, phone: v })}
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="garage" className="text-foreground">Garage / Workshop Location</Label>
-                <LocationPicker
-                  id="garage"
-                  required
-                  address={formData.garageLocation}
-                  onAddressChange={(v) => setFormData({ ...formData, garageLocation: v })}
-                  onLocationDetected={(data) => setCoords({ lat: data.latitude, lng: data.longitude })}
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-foreground">Services Offered</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {serviceOptions.map((service) => (
-                    <label
-                      key={service}
-                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                        selectedServices.includes(service)
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-secondary/50 hover:border-muted-foreground"
-                      }`}
-                    >
-                      <Checkbox
-                        checked={selectedServices.includes(service)}
-                        onCheckedChange={() => toggleService(service)}
-                      />
-                      <span className="text-sm text-foreground">{service}</span>
-                    </label>
-                  ))}
+                <div className="space-y-3">
+                  <Label className="text-foreground">Services Offered</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {serviceOptions.map((service) => (
+                      <label
+                        key={service}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${selectedServices.includes(service)
+                            ? "border-primary bg-primary/10"
+                            : "border-border bg-secondary/50 hover:border-muted-foreground"
+                          }`}
+                      >
+                        <Checkbox
+                          checked={selectedServices.includes(service)}
+                          onCheckedChange={() => toggleService(service)}
+                        />
+                        <span className="text-sm text-foreground">{service}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="text-foreground">Travel Radius</Label>
-                  <Select onValueChange={(v) => setFormData({ ...formData, radius: v })}>
-                    <SelectTrigger className="bg-secondary border-border text-foreground">
-                      <SelectValue placeholder="How far can you travel?" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      {radiusOptions.map((r) => (
-                        <SelectItem key={r} value={r}>{r}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-foreground">Travel Radius</Label>
+                    <Select onValueChange={(v) => setFormData({ ...formData, radius: v })}>
+                      <SelectTrigger className="bg-secondary border-border text-foreground">
+                        <SelectValue placeholder="How far can you travel?" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border">
+                        {radiusOptions.map((r) => (
+                          <SelectItem key={r} value={r}>{r}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-foreground">Availability</Label>
+                    <Select onValueChange={(v) => setFormData({ ...formData, availability: v })}>
+                      <SelectTrigger className="bg-secondary border-border text-foreground">
+                        <SelectValue placeholder="When are you available?" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border">
+                        <SelectItem value="24/7">24/7</SelectItem>
+                        <SelectItem value="daytime">Daytime Only (6AM - 10PM)</SelectItem>
+                        <SelectItem value="weekdays">Weekdays Only</SelectItem>
+                        <SelectItem value="weekends">Weekends Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-foreground">Availability</Label>
-                  <Select onValueChange={(v) => setFormData({ ...formData, availability: v })}>
-                    <SelectTrigger className="bg-secondary border-border text-foreground">
-                      <SelectValue placeholder="When are you available?" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="24/7">24/7</SelectItem>
-                      <SelectItem value="daytime">Daytime Only (6AM - 10PM)</SelectItem>
-                      <SelectItem value="weekdays">Weekdays Only</SelectItem>
-                      <SelectItem value="weekends">Weekends Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
-              <Button
-                type="submit"
-                size="lg"
-                disabled={submitting}
-                className="w-full gradient-primary text-primary-foreground glow-primary font-bold text-lg py-6"
-              >
-                <Handshake className="w-5 h-5 mr-2" />
-                {submitting ? "Submitting..." : "Submit Application"}
-              </Button>
-            </form>
-          </motion.div>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={submitting}
+                  className="w-full bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-semibold text-lg py-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  <Handshake className="w-5 h-5 mr-2" />
+                  {submitting ? "Submitting..." : "Submit Application"}
+                </Button>
+              </form>
+            </motion.div>
+          </div>
         </div>
+        <Footer />
       </div>
-      <Footer />
-      <ChatbotWidget />
-    </div>
     </ParallaxBackground>
   );
 };

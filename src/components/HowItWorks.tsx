@@ -1,78 +1,57 @@
 import { MapPin, Search, CheckCircle } from "lucide-react";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
 
 const steps = [
-  { icon: MapPin, title: "Share Your Location", description: "We detect your GPS or you pin your breakdown spot" },
-  { icon: Search, title: "We Find Help Nearby", description: "Our system matches you with the closest available mechanic" },
-  { icon: CheckCircle, title: "Help Arrives Fast", description: "Track your mechanic in real-time until they reach you" },
+  { icon: MapPin, title: "Share Your Location", description: "We detect your GPS or you pin your breakdown spot on the map." },
+  { icon: Search, title: "We Find Help Nearby", description: "Our system instantly matches you with the closest available mechanic." },
+  { icon: CheckCircle, title: "Help Arrives Fast", description: "Track your mechanic in real-time until they reach you." },
 ];
 
 const HowItWorks = () => {
-  const ref = useRef<HTMLElement>(null);
-  const isMobile = useIsMobile();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const contentY = useTransform(scrollYProgress, [0, 1], ["40px", "-40px"]);
-
   return (
-    <section ref={ref} className="py-24 relative overflow-hidden section-glow-accent">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: "radial-gradient(circle at 25% 25%, hsl(25 95% 55%) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }} />
-      </div>
-
-      <motion.div className="container mx-auto px-4 relative z-10" style={isMobile ? {} : { y: contentY }}>
+    <section className="py-24 bg-[#F8FAFC]">
+      <div className="container mx-auto px-4">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
-            How It <span className="text-gradient-primary">Works</span>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-[#0F172A] mb-4 tracking-tight">
+            How It <span className="text-[#1D4ED8]">Works</span>
           </h2>
-          <p className="text-muted-foreground text-lg max-w-md mx-auto">
+          <p className="text-[#475569] text-lg max-w-md mx-auto">
             Three simple steps to get back on the road.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        {/* Steps */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-4xl mx-auto">
           {steps.map((step, i) => (
             <motion.div
               key={step.title}
-              initial={{ opacity: 0, y: 30, scale: 0.9 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-30px" }}
-              transition={{ delay: i * 0.2, duration: 0.5 }}
-              className="text-center group"
+              transition={{ delay: i * 0.15, duration: 0.5 }}
+              className="cinematic-card text-center rounded-2xl p-4"
             >
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className="relative mx-auto w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center mb-6 group-hover:border-primary/60 transition-colors duration-300"
-              >
-                <step.icon className="w-8 h-8 text-primary" />
-                <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-display font-bold text-sm">
+              {/* Step circle */}
+              <div className="relative mx-auto w-20 h-20 rounded-full bg-[#1D4ED8]/8 border-2 border-[#1D4ED8]/20 flex items-center justify-center mb-6 group">
+                <step.icon className="icon-float w-8 h-8 text-[#1D4ED8]" />
+                <span className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-[#1D4ED8] flex items-center justify-center text-white font-bold text-sm shadow-sm">
                   {i + 1}
                 </span>
-                {/* Pulse ring on hover */}
-                <div className="absolute inset-0 rounded-full border-2 border-primary/0 group-hover:border-primary/20 group-hover:scale-125 transition-all duration-500" />
-              </motion.div>
-              <h3 className="text-xl font-display font-semibold text-foreground mb-2">{step.title}</h3>
-              <p className="text-muted-foreground">{step.description}</p>
+              </div>
 
-              {/* Connector line (desktop) */}
-              {i < steps.length - 1 && (
-                <div className="hidden md:block absolute top-10 left-[calc(50%+60px)] w-[calc(100%-120px)] h-px bg-gradient-to-r from-primary/30 to-primary/10" />
-              )}
+              <h3 className="text-lg font-semibold text-[#0F172A] mb-2">{step.title}</h3>
+              <p className="text-[#475569] text-sm leading-relaxed">{step.description}</p>
             </motion.div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 };

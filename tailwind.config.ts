@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
-        body: ['"Inter"', 'system-ui', 'sans-serif'],
+        display: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+        body: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -89,8 +89,8 @@ export default {
           to: { height: "0" },
         },
         "pulse-glow": {
-          "0%, 100%": { opacity: "1", boxShadow: "0 0 20px hsl(var(--primary) / 0.4)" },
-          "50%": { opacity: "0.8", boxShadow: "0 0 40px hsl(var(--primary) / 0.6), 0 0 80px hsl(var(--primary) / 0.2)" },
+          "0%, 100%": { opacity: "1", boxShadow: "0 1px 3px rgb(0 0 0 / 0.1)" },
+          "50%": { opacity: "0.9", boxShadow: "0 4px 12px rgb(0 0 0 / 0.1)" },
         },
         "float": {
           "0%, 100%": { transform: "translateY(0px)" },
@@ -106,8 +106,8 @@ export default {
           "100%": { backgroundPosition: "0% 50%" },
         },
         "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 20px hsl(0 85% 55% / 0.3), 0 0 40px hsl(0 85% 55% / 0.1)" },
-          "50%": { boxShadow: "0 0 30px hsl(0 85% 55% / 0.5), 0 0 60px hsl(0 85% 55% / 0.2), 0 0 100px hsl(0 85% 55% / 0.1)" },
+          "0%, 100%": { boxShadow: "0 1px 3px rgb(0 0 0 / 0.1)" },
+          "50%": { boxShadow: "0 4px 12px rgb(0 0 0 / 0.12)" },
         },
         "icon-spin": {
           "0%": { transform: "rotateY(0deg)" },

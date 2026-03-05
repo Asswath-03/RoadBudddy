@@ -1,60 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
-
 @layer base {
   :root {
-    --background: 220 20% 6%;
-    --foreground: 40 20% 95%;
+    /* ─── Professional Light Theme ─── */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
 
-    --card: 220 18% 10%;
-    --card-foreground: 40 20% 95%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 220 18% 10%;
-    --popover-foreground: 40 20% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 25 95% 55%;
+    --primary: 226 71% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 16%;
-    --secondary-foreground: 40 20% 90%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 15% 14%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 37%;
 
-    --accent: 0 85% 55%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 18%;
-    --input: 220 15% 18%;
-    --ring: 25 95% 55%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 226 71% 48%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 220 18% 8%;
-    --sidebar-foreground: 40 20% 90%;
-    --sidebar-primary: 25 95% 55%;
+    --sidebar-background: 210 40% 96%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 226 71% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 14%;
-    --sidebar-accent-foreground: 40 20% 90%;
-    --sidebar-border: 220 15% 18%;
-    --sidebar-ring: 25 95% 55%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 226 71% 48%;
 
     /* Custom tokens */
-    --warning: 45 100% 50%;
-    --warning-foreground: 0 0% 10%;
-    --success: 145 60% 45%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --success: 142 71% 35%;
     --success-foreground: 0 0% 100%;
-    --emergency: 0 85% 55%;
+    --emergency: 226 71% 48%;
     --emergency-foreground: 0 0% 100%;
-    --glow-primary: 25 95% 55%;
-    --glow-emergency: 0 85% 55%;
   }
+}
+
+html {
+  scroll-behavior: auto;
 }
 
 @layer base {
@@ -63,93 +66,96 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+    background: #070d18;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Sora', 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 700;
   }
 }
 
 @layer utilities {
-  .gradient-primary {
-    background: linear-gradient(135deg, hsl(25, 95%, 55%), hsl(15, 90%, 50%));
+
+  /* ─── Background utilities ─── */
+  .bg-section-alt {
+    background-color: hsl(210 40% 96%);
   }
 
-  .gradient-emergency {
-    background: linear-gradient(135deg, hsl(0, 85%, 55%), hsl(25, 95%, 55%));
+  /* ─── Button styles ─── */
+  .btn-primary {
+    background-color: hsl(226, 71%, 48%);
+    color: white;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    transition: all 0.3s ease;
   }
 
-  .gradient-dark {
-    background: linear-gradient(180deg, hsl(220, 20%, 6%), hsl(220, 18%, 10%));
+  .btn-primary:hover {
+    background-color: hsl(226, 71%, 42%);
+    transform: scale(1.02);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
 
-  .glow-primary {
-    box-shadow: 0 0 30px hsl(25 95% 55% / 0.3), 0 0 60px hsl(25 95% 55% / 0.1);
+  .btn-primary:active {
+    transform: scale(0.98);
   }
 
-  .glow-emergency {
-    box-shadow: 0 0 30px hsl(0 85% 55% / 0.4), 0 0 60px hsl(0 85% 55% / 0.15);
+  .btn-secondary {
+    background-color: white;
+    color: hsl(226, 71%, 48%);
+    border: 1.5px solid hsl(226, 71%, 48%);
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
   }
 
-  .text-gradient-primary {
-    background: linear-gradient(135deg, hsl(25, 95%, 55%), hsl(40, 100%, 60%));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .btn-secondary:hover {
+    background-color: hsl(226, 71%, 48%);
+    color: white;
+    transform: scale(1.02);
   }
 
-  .text-gradient-emergency {
-    background: linear-gradient(135deg, hsl(0, 85%, 55%), hsl(25, 95%, 55%));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .btn-secondary:active {
+    transform: scale(0.98);
   }
 
-  /* Gradient border glow for cards */
-  .gradient-border-glow {
-    position: relative;
-  }
-  .gradient-border-glow::before {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    background: linear-gradient(135deg, hsl(25, 95%, 55%), hsl(0, 85%, 55%), hsl(25, 95%, 55%));
-    background-size: 200% 200%;
-    animation: gradient-shift 4s ease infinite;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: -1;
-  }
-  .gradient-border-glow:hover::before {
-    opacity: 1;
+  .btn-success {
+    background-color: hsl(142, 71%, 35%);
+    color: white;
+    border-radius: 8px;
+    font-weight: 600;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    transition: all 0.3s ease;
   }
 
-  /* Button sweep effect */
-  .btn-sweep {
-    position: relative;
-    overflow: hidden;
-  }
-  .btn-sweep::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.15), transparent);
-    transform: skewX(-15deg);
-    transition: left 0.5s ease;
-  }
-  .btn-sweep:hover::after {
-    left: 150%;
+  .btn-success:hover {
+    background-color: hsl(142, 71%, 30%);
+    transform: scale(1.02);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   }
 
-  /* Nav link underline animation */
+  .btn-success:active {
+    transform: scale(0.98);
+  }
+
+  /* ─── Nav link underline animation ─── */
   .nav-link-animated {
     position: relative;
   }
+
   .nav-link-animated::after {
     content: '';
     position: absolute;
@@ -157,131 +163,230 @@
     left: 0;
     width: 100%;
     height: 2px;
-    background: hsl(25, 95%, 55%);
+    background: hsl(226, 71%, 48%);
     transform: scaleX(0);
     transform-origin: right;
     transition: transform 0.3s ease;
   }
+
   .nav-link-animated:hover::after {
     transform: scaleX(1);
     transform-origin: left;
   }
 
-  /* Card lift hover */
-  .card-lift {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  .card-lift:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 20px 40px hsl(0 0% 0% / 0.3), 0 0 20px hsl(25 95% 55% / 0.1);
-  }
-
-  /* Light sweep for footer */
-  .light-sweep {
-    position: relative;
-    overflow: hidden;
-  }
-  .light-sweep::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, hsl(25 95% 55% / 0.03), transparent);
-    animation: sweep 8s ease-in-out infinite;
+  /* ─── Card styles ─── */
+  .card-clean {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid hsl(214, 32%, 91%);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+    transition: all 0.3s ease;
   }
 
-  /* Glassmorphism */
-  .glass {
-    background: hsl(220 18% 10% / 0.6);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid hsl(220 15% 18% / 0.6);
+  .card-clean:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.08), 0 4px 6px -2px rgb(0 0 0 / 0.04);
+    border-color: hsl(226, 71%, 48% / 0.2);
   }
 
-  .glass-strong {
-    background: hsl(220 18% 10% / 0.75);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid hsl(220 15% 20% / 0.5);
-  }
-
-  /* Section radial glow */
-  .section-glow-primary {
+  /* ─── Section separator ─── */
+  .section-separator {
     position: relative;
   }
-  .section-glow-primary::before {
+
+  .section-separator::before {
     content: '';
     position: absolute;
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 60%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, hsl(25 95% 55% / 0.4), transparent);
+    width: 80px;
+    height: 3px;
+    border-radius: 3px;
+    background: hsl(226, 71%, 48%);
+  }
+
+  /* ─── Glassmorphism (light) ─── */
+  .glass {
+    background: hsl(0 0% 100% / 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsl(214 32% 91% / 0.8);
+  }
+
+  /* ─── Animate float for icons ─── */
+  .animate-float {
+    animation: float-y 3s ease-in-out infinite;
+  }
+
+  @keyframes float-y {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* ─── Subtle pulse ─── */
+  .pulse-subtle {
+    animation: pulse-subtle 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-subtle {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  /* Legacy compat — referenced by some components */
+  .gradient-primary {
+    background: hsl(226, 71%, 48%);
+  }
+
+  .gradient-emergency {
+    background: hsl(226, 71%, 48%);
+  }
+
+  .gradient-cta {
+    background: hsl(142, 71%, 35%);
+  }
+
+  .text-gradient-primary {
+    color: hsl(226, 71%, 48%);
+    -webkit-text-fill-color: unset;
+  }
+
+  .btn-sweep {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .heartbeat-sos {
+    /* disabled in light theme */
+  }
+
+  .glow-primary {
+    box-shadow: none;
+  }
+
+  .section-glow-primary {
+    position: relative;
   }
 
   .section-glow-accent {
     position: relative;
   }
-  .section-glow-accent::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, hsl(0 85% 55% / 0.3), transparent);
-  }
 
-  /* Depth shadow for cards */
   .depth-shadow {
-    box-shadow: 0 8px 32px hsl(0 0% 0% / 0.4), 0 0 0 1px hsl(220 15% 18% / 0.3);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.06), 0 0 0 1px hsl(214 32% 91% / 0.5);
   }
 
-  /* Hero light sweep animation */
-  .hero-sweep::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 40%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, hsl(25 95% 55% / 0.06), transparent);
-    transform: skewX(-20deg);
-    animation: hero-sweep-move 6s ease-in-out infinite;
+  .light-sweep {
+    position: relative;
+    overflow: hidden;
   }
 
-  @keyframes hero-sweep-move {
-    0% { left: -100%; }
-    50% { left: 120%; }
-    100% { left: 120%; }
+  .card-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
-  /* SOS heartbeat pulse */
-  .heartbeat-sos {
-    animation: heartbeat-sos 1.5s ease-in-out infinite, glow-pulse 2s ease-in-out infinite;
+  .card-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.08);
   }
 
-  @keyframes heartbeat-sos {
-    0%, 100% { transform: scale(1); }
-    15% { transform: scale(1.04); }
-    30% { transform: scale(1); }
-    45% { transform: scale(1.02); }
-    60% { transform: scale(1); }
+  .cinematic-noise {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0.11;
+    mix-blend-mode: soft-light;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.35) 0.6px, transparent 0.6px);
+    background-size: 3px 3px;
   }
 
-  /* Input shake on invalid */
-  .shake-invalid {
-    animation: shake 0.4s ease-in-out;
+  .cinematic-parallax-layer {
+    position: fixed;
+    inset: -7vh -4vw;
+    pointer-events: none;
+    will-change: transform;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
   }
 
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-4px); }
-    50% { transform: translateX(4px); }
-    75% { transform: translateX(-4px); }
+  .cinematic-parallax-back {
+    z-index: 1;
+    filter: blur(0.3px) saturate(0.88);
+    transform: translate3d(0, calc(var(--smooth-scroll-y, 0px) * -0.26), 0)
+      scale(calc(1.04 + (var(--smooth-scroll-progress, 0) * 0.08)));
+  }
+
+  .cinematic-parallax-mid {
+    z-index: 2;
+    backdrop-filter: blur(1.4px);
+    transform: translate3d(var(--smooth-scroll-drift, 0px), calc(var(--smooth-scroll-y, 0px) * -0.56), 0)
+      scale(1.08);
+  }
+
+  .cinematic-button {
+    transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 300ms ease, filter 300ms ease;
+    will-change: transform, box-shadow;
+  }
+
+  .cinematic-button:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 12px 28px rgba(96, 143, 255, 0.35);
+    filter: saturate(1.06);
+  }
+
+  .cinematic-button:active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  .cinematic-card {
+    transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 320ms ease, border-color 320ms ease;
+    will-change: transform;
+  }
+
+  .cinematic-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 18px 32px rgba(6, 11, 24, 0.18);
+  }
+
+  .icon-float {
+    animation: iconFloat 4.2s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  @keyframes iconFloat {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cinematic-parallax-layer,
+    .cinematic-button,
+    .cinematic-card,
+    .icon-float {
+      animation: none !important;
+      transition: none !important;
+      transform: none !important;
+    }
   }
 }

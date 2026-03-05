@@ -1,116 +1,122 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import heroBg from "@/assets/hero-bg.jpg";
 
-const FloatingOrb = ({
-  size,
-  color,
-  top,
-  left,
-  delay,
-  duration,
-}: {
-  size: number;
-  color: string;
-  top: string;
-  left: string;
-  delay: number;
-  duration: number;
-}) => {
-  const isMobile = useIsMobile();
-  if (isMobile) return null;
+interface ParallaxBackgroundProps {
+  children: ReactNode;
+  fixedOverlay?: ReactNode;
+}
+
+const ParallaxBackground = ({ children, fixedOverlay }: ParallaxBackgroundProps) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
+  const heightRef = useRef(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [smoothEnabled, setSmoothEnabled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMode = () => setSmoothEnabled(!media.matches);
+
+    updateMode();
+    media.addEventListener("change", updateMode);
+    return () => media.removeEventListener("change", updateMode);
+  }, []);
+
+  useEffect(() => {
+    if (!smoothEnabled || !contentRef.current) {
+      return;
+    }
+
+    const root = document.documentElement;
+    const content = contentRef.current;
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const lerp = isMobile ? 0.16 : 0.11;
+
+    let current = window.scrollY;
+    let target = window.scrollY;
+
+    const updateHeight = () => {
+      const nextHeight = content.getBoundingClientRect().height;
+      heightRef.current = nextHeight;
+      setContentHeight((prev) => (Math.abs(prev - nextHeight) > 1 ? nextHeight : prev));
+    };
+
+    const updateFrame = () => {
+      target = window.scrollY;
+      current += (target - current) * lerp;
+
+      if (Math.abs(target - current) < 0.1) {
+        current = target;
+      }
+
+      const maxScroll = Math.max(heightRef.current - window.innerHeight, 1);
+      const progress = Math.min(Math.max(current / maxScroll, 0), 1);
+      const drift = Math.sin(current * 0.0017) * 24;
+
+      content.style.transform = `translate3d(0, ${-current}px, 0)`;
+      root.style.setProperty("--smooth-scroll-y", `${current}px`);
+      root.style.setProperty("--smooth-scroll-progress", progress.toFixed(4));
+      root.style.setProperty("--smooth-scroll-drift", `${drift.toFixed(2)}px`);
+
+      rafRef.current = window.requestAnimationFrame(updateFrame);
+    };
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(content);
+    updateHeight();
+
+    content.style.position = "fixed";
+    content.style.inset = "0";
+    content.style.width = "100%";
+    content.style.willChange = "transform";
+
+    rafRef.current = window.requestAnimationFrame(updateFrame);
+
+    return () => {
+      if (rafRef.current) {
+        window.cancelAnimationFrame(rafRef.current);
+      }
+      resizeObserver.disconnect();
+      content.style.position = "";
+      content.style.inset = "";
+      content.style.width = "";
+      content.style.transform = "";
+      content.style.willChange = "";
+      root.style.removeProperty("--smooth-scroll-y");
+      root.style.removeProperty("--smooth-scroll-progress");
+      root.style.removeProperty("--smooth-scroll-drift");
+    };
+  }, [smoothEnabled]);
 
   return (
-    <motion.div
-      className="absolute rounded-full pointer-events-none will-change-transform"
-      style={{
-        width: size,
-        height: size,
-        top,
-        left,
-        background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
-        filter: "blur(60px)",
-      }}
-      animate={{
-        y: [0, -30, 0],
-        x: [0, 15, 0],
-        scale: [1, 1.1, 1],
-      }}
-      transition={{
-        duration,
-        repeat: Infinity,
-        ease: "easeInOut",
-        delay,
-      }}
-    />
-  );
-};
+    <div className="relative min-h-screen overflow-x-clip bg-[#0B1220]">
+      <div className="cinematic-noise" aria-hidden="true" />
+      <div
+        className="cinematic-parallax-layer cinematic-parallax-back"
+        style={{
+          backgroundImage: `linear-gradient(180deg, rgba(9,15,26,0.4) 0%, rgba(9,15,26,0.85) 100%), url(${heroBg})`,
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="cinematic-parallax-layer cinematic-parallax-mid"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 28% 25%, rgba(255,180,95,0.24), transparent 34%), radial-gradient(circle at 72% 58%, rgba(110,157,255,0.22), transparent 36%), linear-gradient(120deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01))",
+        }}
+        aria-hidden="true"
+      />
 
-const ParallaxBackground = ({ children }: { children: React.ReactNode }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
-  const { scrollYProgress } = useScroll();
-  const gradientY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
+      <div ref={contentRef} className="relative z-20">
+        {children}
+      </div>
+      {smoothEnabled ? <div style={{ height: contentHeight }} aria-hidden="true" /> : null}
 
-  return (
-    <div ref={ref} className="relative min-h-screen overflow-hidden">
-      {/* Base gradient layer */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-[hsl(220,30%,7%)] via-[hsl(225,25%,5%)] to-[hsl(0,0%,0%)]" />
-
-      {/* Animated gradient mesh */}
-      {!isMobile && (
-        <motion.div
-          className="fixed inset-0 z-0 will-change-transform"
-          style={{ y: gradientY }}
-        >
-          <div
-            className="absolute inset-0 opacity-30"
-            style={{
-              background:
-                "radial-gradient(ellipse 80% 50% at 20% 40%, hsl(25 95% 55% / 0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 75% 60%, hsl(0 85% 55% / 0.06) 0%, transparent 50%), radial-gradient(ellipse 90% 60% at 50% 90%, hsl(220 40% 30% / 0.15) 0%, transparent 60%)",
-            }}
-          />
-        </motion.div>
-      )}
-
-      {/* Floating orbs */}
-      <FloatingOrb size={300} color="hsl(25 95% 55% / 0.04)" top="10%" left="5%" delay={0} duration={8} />
-      <FloatingOrb size={200} color="hsl(0 85% 55% / 0.03)" top="40%" left="80%" delay={2} duration={10} />
-      <FloatingOrb size={250} color="hsl(220 60% 50% / 0.04)" top="70%" left="20%" delay={4} duration={12} />
-      <FloatingOrb size={180} color="hsl(25 95% 55% / 0.03)" top="85%" left="65%" delay={1} duration={9} />
-
-      {/* Animated road-line pattern (desktop only) */}
-      {!isMobile && (
-        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-          <motion.div
-            className="absolute left-1/2 top-0 w-px h-full opacity-[0.04]"
-            style={{
-              background: "repeating-linear-gradient(180deg, hsl(25 95% 55%) 0px, hsl(25 95% 55%) 40px, transparent 40px, transparent 80px)",
-            }}
-            animate={{ y: [0, 80] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          />
-          <motion.div
-            className="absolute left-[30%] top-0 w-px h-full opacity-[0.02]"
-            style={{
-              background: "repeating-linear-gradient(180deg, hsl(0 0% 50%) 0px, hsl(0 0% 50%) 20px, transparent 20px, transparent 60px)",
-            }}
-            animate={{ y: [0, 60] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-          />
-          <motion.div
-            className="absolute left-[70%] top-0 w-px h-full opacity-[0.02]"
-            style={{
-              background: "repeating-linear-gradient(180deg, hsl(0 0% 50%) 0px, hsl(0 0% 50%) 20px, transparent 20px, transparent 60px)",
-            }}
-            animate={{ y: [0, 60] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "linear", delay: 2 }}
-          />
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="relative z-10">{children}</div>
+      {fixedOverlay ? <div className="relative z-40">{fixedOverlay}</div> : null}
     </div>
   );
 };

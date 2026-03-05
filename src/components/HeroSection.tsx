@@ -1,183 +1,100 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Shield, Wrench, Zap, Fuel } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useRef } from "react";
 import heroBg from "@/assets/hero-bg.jpg";
-import ScrollCar from "@/components/ScrollCar";
-import MagneticButton from "@/components/MagneticButton";
-
-const headlines = [
-  "when you need it most.",
-  "anytime, anywhere.",
-  "in under 15 minutes.",
-];
 
 const HeroSection = () => {
-  const ref = useRef<HTMLElement>(null);
-  const isMobile = useIsMobile();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [0.8, 1]);
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
 
-  // Typing effect
-  const [headlineIdx, setHeadlineIdx] = useState(0);
-  const [displayed, setDisplayed] = useState("");
-  const [typing, setTyping] = useState(true);
-
-  useEffect(() => {
-    const target = headlines[headlineIdx];
-    if (typing) {
-      if (displayed.length < target.length) {
-        const t = setTimeout(() => setDisplayed(target.slice(0, displayed.length + 1)), 60);
-        return () => clearTimeout(t);
-      } else {
-        const t = setTimeout(() => setTyping(false), 2000);
-        return () => clearTimeout(t);
-      }
-    } else {
-      if (displayed.length > 0) {
-        const t = setTimeout(() => setDisplayed(displayed.slice(0, -1)), 30);
-        return () => clearTimeout(t);
-      } else {
-        setHeadlineIdx((i) => (i + 1) % headlines.length);
-        setTyping(true);
-      }
-    }
-  }, [displayed, typing, headlineIdx]);
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "28%"]);
+  const backgroundScale = useTransform(scrollYProgress, [0, 1], [1, 1.13]);
+  const textY = useTransform(scrollYProgress, [0, 1], ["0%", "-10%"]);
 
   return (
-    <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden hero-sweep">
-      {/* Background with parallax */}
-      <motion.div className="absolute inset-0" style={isMobile ? {} : { y: bgY }}>
-        <img src={heroBg} alt="Roadside assistance at dusk" className="w-full h-full object-cover scale-110" />
-      </motion.div>
+    <section ref={heroRef} className="relative min-h-[96vh] overflow-hidden pt-28">
       <motion.div
-        className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40"
-        style={isMobile ? {} : { opacity: overlayOpacity }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
+        className="absolute inset-0 will-change-transform"
+        style={{ y: backgroundY, scale: backgroundScale }}
+      >
+        <img
+          src={heroBg}
+          alt="Vintage roadside mechanic repair scene"
+          className="h-full w-full object-cover"
+          loading="eager"
+          decoding="async"
+        />
+      </motion.div>
 
-      {/* Floating icons (desktop only) */}
-      {!isMobile && (
-        <>
-          <motion.div
-            className="absolute top-32 right-[15%] text-primary/20"
-            animate={{ y: [0, -12, 0], rotate: [0, 5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Wrench className="w-12 h-12" />
-          </motion.div>
-          <motion.div
-            className="absolute bottom-40 right-[25%] text-primary/15"
-            animate={{ y: [0, -8, 0], rotate: [0, -3, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          >
-            <Zap className="w-10 h-10" />
-          </motion.div>
-          <motion.div
-            className="absolute top-1/2 right-[10%] text-primary/10"
-            animate={{ y: [0, -15, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          >
-            <Fuel className="w-14 h-14" />
-          </motion.div>
-        </>
-      )}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#050b14]/30 via-[#050b14]/62 to-[#050b14]/92" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_25%,rgba(255,197,120,0.24),transparent_34%),radial-gradient(circle_at_74%_68%,rgba(93,137,255,0.24),transparent_38%)]" />
 
-      <div className="relative z-10 container mx-auto px-4 pt-20">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="max-w-2xl"
-        >
+      <motion.div
+        className="relative z-10 container mx-auto px-4 pb-20"
+        style={{ y: textY }}
+      >
+        <div className="mx-auto max-w-4xl text-center">
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 backdrop-blur-sm"
           >
-            <Shield className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">24/7 Emergency Roadside Assistance</span>
+            <ShieldCheck className="h-4 w-4 text-[#9CB8FF]" />
+            <span className="text-sm font-medium text-white">24/7 Emergency Roadside Response</span>
           </motion.div>
 
-          <h1 className="text-5xl md:text-7xl font-display font-bold text-foreground leading-tight mb-4">
-            Help on the road,{" "}
-            <span className="text-gradient-primary">
-              {displayed}
-              <motion.span
-                animate={{ opacity: [1, 0] }}
-                transition={{ duration: 0.5, repeat: Infinity }}
-                className="inline-block w-[3px] h-[1em] bg-primary ml-1 align-middle"
-              />
-            </span>
-          </h1>
+          <motion.h1
+            initial={{ opacity: 0, y: 42 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl md:text-7xl"
+          >
+            Cinematic roadside assistance,
+            <span className="block text-[#9CB8FF]">engineered for real emergencies.</span>
+          </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="text-lg md:text-xl text-muted-foreground mb-8 max-w-lg"
+            transition={{ duration: 0.75, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-slate-200 md:text-xl"
           >
-            Instant connection to nearby mechanics and service providers.
-            Breakdown? We've got your back — in minutes, not hours.
+            Connect instantly with nearby mechanics, live ETA tracking, and verified on-road support that arrives in minutes.
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 26 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="flex flex-col sm:flex-row gap-4"
+            transition={{ duration: 0.7, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-10 flex flex-col justify-center gap-4 sm:flex-row"
           >
-            <MagneticButton>
-              <Link to="/request-help">
-                <Button size="lg" className="gradient-emergency text-primary-foreground animate-glow-pulse btn-sweep font-bold text-lg px-8 py-6 w-full sm:w-auto heartbeat-sos">
-                  Request Help Now
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-            </MagneticButton>
-            <MagneticButton>
-              <Link to="/join-partner">
-                <Button size="lg" variant="outline" className="border-border text-foreground hover:bg-secondary btn-sweep font-semibold text-lg px-8 py-6 w-full sm:w-auto">
-                  Become a Partner
-                </Button>
-              </Link>
-            </MagneticButton>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="flex gap-8 mt-12 pt-8 border-t border-border/50"
-          >
-            {[
-              { value: "500+", label: "Mechanics" },
-              { value: "<15min", label: "Avg Response" },
-              { value: "24/7", label: "Availability" },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.1 + i * 0.15 }}
+            <Link to="/request-help">
+              <Button
+                size="lg"
+                className="cinematic-button w-full bg-[#2A5BFF] px-8 py-6 text-base font-semibold text-white shadow-[0_14px_34px_rgba(42,91,255,0.4)] hover:bg-[#1C4BF4] sm:w-auto"
               >
-                <p className="text-2xl font-display font-bold text-primary">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </motion.div>
-            ))}
+                Request Help Now
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/join-partner">
+              <Button
+                size="lg"
+                variant="outline"
+                className="cinematic-button w-full border-white/40 bg-white/10 px-8 py-6 text-base font-semibold text-white backdrop-blur-sm hover:bg-white hover:text-[#0F172A] sm:w-auto"
+              >
+                Become a Partner
+              </Button>
+            </Link>
           </motion.div>
-        </motion.div>
-      </div>
-
-      {/* Scroll-linked car animation */}
-      <div className="absolute bottom-0 left-0 right-0 z-10">
-        <ScrollCar />
-      </div>
+        </div>
+      </motion.div>
     </section>
   );
 };
