@@ -10,6 +10,8 @@ import ChatbotWidget from "@/components/ChatbotWidget";
 import ParallaxBackground from "@/components/ParallaxBackground";
 import DynamicLighting from "@/components/DynamicLighting";
 import IntroAnimation from "@/components/IntroAnimation";
+import VehicleEvolution from "@/components/VehicleEvolution";
+import AppShowcase from "@/components/AppShowcase";
 import { motion, AnimatePresence } from "framer-motion";
 
 const fadeUp = {
@@ -80,10 +82,16 @@ const Index = () => {
                 <HowItWorks />
               </motion.div>
 
+              {/* Vehicle Evolution — vintage → modern transformation */}
+              <VehicleEvolution />
+
               {/* Live Dispatch */}
               <motion.div {...fadeUp} style={{ backgroundColor: "#FFFFFF" }}>
                 <LiveDispatch />
               </motion.div>
+
+              {/* App Showcase — phone mockups (after Live Assistance) */}
+              <AppShowcase />
 
               {/* CTA Banner */}
               <motion.div
