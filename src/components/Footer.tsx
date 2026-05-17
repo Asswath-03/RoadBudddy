@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Phone, Mail, MapPin, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import logoImg from "@/assets/logo.png";
 
@@ -71,8 +71,8 @@ const Footer = () => {
               <a href="tel:+18001234567" className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#1D4ED8] transition-colors">
                 <Phone className="w-4 h-4" /> 1-800-123-4567
               </a>
-              <a href="mailto:help@roadbuddy.com" className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#1D4ED8] transition-colors">
-                <Mail className="w-4 h-4" /> help@roadbuddy.com
+              <a href="mailto:helproadbuddy@gmail.com" className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#1D4ED8] transition-colors">
+                <Mail className="w-4 h-4" /> helproadbuddy@gmail.com
               </a>
               <span className="flex items-center gap-2 text-sm text-[#475569]">
                 <MapPin className="w-4 h-4" /> Available Nationwide
@@ -82,8 +82,16 @@ const Footer = () => {
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-[#E2E8F0] mt-10 pt-8 text-center">
+        <div className="border-t border-[#E2E8F0] mt-10 pt-8 flex items-center justify-between flex-wrap gap-2">
           <p className="text-sm text-[#94A3B8]">© 2026 RoadBuddy. All rights reserved.</p>
+          {/* Visible Admin link */}
+          <Link
+            to="/admin"
+            className="flex items-center gap-1.5 text-sm text-[#475569] hover:text-[#1D4ED8] font-medium transition-colors"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            Admin Login
+          </Link>
         </div>
       </div>
     </footer>

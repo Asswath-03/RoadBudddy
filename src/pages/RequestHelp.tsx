@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, MapPin, Send, CheckCircle } from "lucide-react";
+import { AlertTriangle, MapPin, Send, CheckCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -28,6 +28,8 @@ const vehicleTypes = ["Car", "Bike", "Truck", "SUV", "Van", "Other"];
 
 const RequestHelp = () => {
   const [submitted, setSubmitted] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -48,18 +50,54 @@ const RequestHelp = () => {
   };
 
   const detectLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFormData((prev) => ({
-            ...prev,
-            location: `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`,
-          }));
-          toast.success("Location detected!");
-        },
-        () => toast.error("Unable to detect location. Please enter manually.")
-      );
+    setLocationError("");
+    if (!navigator.geolocation) {
+      setLocationError("Your browser doesn't support GPS location.");
+      return;
     }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        // Reverse geocode to human-readable address via Nominatim
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+            { headers: { "User-Agent": "RoadBuddy/1.0" } }
+          );
+          const data = await res.json();
+          const addr = data.address || {};
+          const parts = [
+            addr.road,
+            addr.neighbourhood || addr.suburb,
+            addr.city || addr.town || addr.village,
+            addr.state,
+          ].filter(Boolean);
+          const readable = parts.length > 0
+            ? parts.join(", ")
+            : `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+          setFormData((prev) => ({ ...prev, location: readable }));
+          toast.success("📍 Location detected: " + readable.split(",")[0]);
+        } catch {
+          const raw = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+          setFormData((prev) => ({ ...prev, location: raw }));
+          toast.success("Location detected.");
+        }
+        setLocating(false);
+      },
+      (err) => {
+        setLocating(false);
+        const msgs: Record<number, string> = {
+          1: "Location permission denied. Please allow location access in your browser settings and try again.",
+          2: "GPS signal unavailable. Move to an open area or enter your address manually.",
+          3: "Location detection timed out. Please try again or enter address manually.",
+        };
+        const msg = msgs[err.code] || "Unable to detect location. Please enter manually.";
+        setLocationError(msg);
+        toast.error(msg);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    );
   };
 
   if (submitted) {
@@ -129,21 +167,38 @@ const RequestHelp = () => {
                 </div>
               </div>
 
+              {/* Location field with robust GPS detection */}
               <div className="space-y-2">
                 <Label htmlFor="location" className="text-foreground">Breakdown Location</Label>
                 <div className="flex gap-2">
                   <Input
                     id="location"
                     required
-                    placeholder="Enter address or detect GPS"
+                    placeholder="Enter address or tap Detect GPS"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     className="bg-secondary border-border text-foreground placeholder:text-muted-foreground flex-1"
                   />
-                  <Button type="button" variant="outline" onClick={detectLocation} className="border-primary text-primary hover:bg-primary/10 shrink-0">
-                    <MapPin className="w-4 h-4 mr-1" /> Detect
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={detectLocation}
+                    disabled={locating}
+                    className="border-primary text-primary hover:bg-primary/10 shrink-0 min-w-[100px]"
+                  >
+                    {locating ? (
+                      <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Detecting</>
+                    ) : (
+                      <><MapPin className="w-4 h-4 mr-1" />Detect GPS</>
+                    )}
                   </Button>
                 </div>
+                {locationError && (
+                  <p className="text-xs text-destructive flex items-start gap-1 mt-1">
+                    <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
+                    {locationError}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

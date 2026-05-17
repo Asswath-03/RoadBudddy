@@ -112,40 +112,52 @@ const Screen2 = () => (
 const Screen3 = () => (
     <div className="flex flex-col h-full bg-white overflow-hidden">
         <div className="bg-blue-600 px-3 pt-1 pb-2.5 shrink-0">
-            <p className="text-white text-[10px] font-bold">Nearby Mechanics</p>
-            <p className="text-blue-200 text-[8px]">3 available near you</p>
+            <p className="text-white text-[10px] font-bold">📍 Nearby Services</p>
+            <p className="text-blue-200 text-[8px]">5 helpers within 1 km</p>
         </div>
-        <div className="h-28 relative bg-slate-100 shrink-0 overflow-hidden">
-            <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(203,213,225,0.65) 1px,transparent 1px),linear-gradient(90deg,rgba(203,213,225,0.65) 1px,transparent 1px)", backgroundSize: "18px 18px" }} />
-            <div className="absolute" style={{ left: "42%", top: "38%" }}>
+        {/* Map — pins clustered tightly around user */}
+        <div className="h-24 relative bg-slate-100 shrink-0 overflow-hidden">
+            <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(203,213,225,0.7) 1px,transparent 1px),linear-gradient(90deg,rgba(203,213,225,0.7) 1px,transparent 1px)", backgroundSize: "14px 14px" }} />
+            {/* User pin — center */}
+            <div className="absolute" style={{ left: "46%", top: "42%" }}>
                 <div className="w-5 h-5 rounded-full bg-blue-600 border-2 border-white shadow-lg flex items-center justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-white" />
                 </div>
-                <div className="absolute inset-0 rounded-full border-2 border-blue-400 animate-ping opacity-40" />
+                <div className="absolute inset-0 rounded-full border-2 border-blue-400 animate-ping opacity-50" />
             </div>
-            {[{ x: "62%", y: "18%", l: "A" }, { x: "22%", y: "58%", l: "B" }, { x: "72%", y: "66%", l: "C" }].map(p => (
-                <div key={p.l} className="absolute" style={{ left: p.x, top: p.y }}>
-                    <div className="w-6 h-6 rounded-full bg-green-500 border-2 border-white shadow-md flex items-center justify-center">
-                        <span className="text-[8px] text-white font-bold">{p.l}</span>
-                    </div>
+            {/* Very nearby service pins — clustered tight */}
+            {[
+                { x: "56%", y: "28%", color: "bg-green-500", icon: "🔧" },
+                { x: "32%", y: "36%", color: "bg-orange-500", icon: "⛽" },
+                { x: "60%", y: "58%", color: "bg-green-500", icon: "🔧" },
+                { x: "30%", y: "62%", color: "bg-purple-500", icon: "⚡" },
+                { x: "54%", y: "72%", color: "bg-blue-400", icon: "🚛" },
+            ].map((p, i) => (
+                <div key={i} className="absolute flex items-center justify-center" style={{ left: p.x, top: p.y, width: 18, height: 18, borderRadius: "50%" }}>
+                    <span style={{ fontSize: 10 }}>{p.icon}</span>
                 </div>
             ))}
-            <div className="absolute" style={{ left: "28%", top: "18%", width: 70, height: 70, borderRadius: "50%", border: "1.5px dashed rgba(37,99,235,0.35)" }} />
+            {/* Tight radius circle */}
+            <div className="absolute" style={{ left: "26%", top: "14%", width: 90, height: 90, borderRadius: "50%", border: "1.5px dashed rgba(37,99,235,0.3)" }} />
         </div>
-        <div className="flex-1 p-2 space-y-1.5 overflow-hidden">
-            {[{ n: "Ravi Mechanics", d: "0.8 km", r: 4.8, e: "8 min", a: true }, { n: "Kumar Auto", d: "1.2 km", r: 4.6, e: "12 min", a: false }, { n: "Speed Fix", d: "1.8 km", r: 4.5, e: "18 min", a: false }].map(m => (
-                <div key={m.n} className={`flex items-center gap-2 p-2 rounded-xl ${m.a ? "bg-blue-50 border border-blue-200" : "bg-slate-50"}`}>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${m.a ? "bg-blue-600" : "bg-slate-300"}`}>
-                        <Wrench size={13} className="text-white" />
-                    </div>
+        {/* Nearby service list */}
+        <div className="flex-1 p-1.5 space-y-1 overflow-hidden">
+            {[
+                { icon: "🔧", name: "Ravi Mechanics", type: "Car Repair", dist: "200 m", eta: "2 min", color: "text-green-600", bg: "bg-green-50  border-green-200", a: true },
+                { icon: "⛽", name: "QuickFuel Delivery", type: "Fuel Emergency", dist: "350 m", eta: "4 min", color: "text-orange-600", bg: "bg-orange-50 border-orange-200", a: false },
+                { icon: "⚡", name: "BatteryPro", type: "Battery / Jumpstart", dist: "500 m", eta: "6 min", color: "text-purple-600", bg: "bg-purple-50 border-purple-200", a: false },
+                { icon: "🚛", name: "TowEasy", type: "Towing Service", dist: "750 m", eta: "9 min", color: "text-blue-600", bg: "bg-blue-50   border-blue-200", a: false },
+            ].map(m => (
+                <div key={m.name} className={`flex items-center gap-2 px-2 py-1.5 rounded-xl border ${m.a ? m.bg : "bg-slate-50 border-slate-200"}`}>
+                    <span style={{ fontSize: 14 }}>{m.icon}</span>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-semibold text-slate-800 truncate">{m.n}</p>
-                        <div className="flex items-center gap-0.5">
-                            <Star size={8} className="text-yellow-400 fill-yellow-400" />
-                            <span className="text-[8px] text-slate-500">{m.r} · {m.d}</span>
-                        </div>
+                        <p className="text-[9px] font-bold text-slate-800 truncate">{m.name}</p>
+                        <p className={`text-[8px] font-medium ${m.a ? m.color : "text-slate-400"}`}>{m.type}</p>
                     </div>
-                    <span className={`text-[8px] font-semibold shrink-0 ${m.a ? "text-blue-600" : "text-slate-400"}`}>{m.e}</span>
+                    <div className="text-right shrink-0">
+                        <p className={`text-[8px] font-bold ${m.a ? m.color : "text-slate-500"}`}>{m.dist}</p>
+                        <p className="text-[7px] text-slate-400">{m.eta}</p>
+                    </div>
                 </div>
             ))}
         </div>

@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import RequestHelp from "./pages/RequestHelp";
 import JoinPartner from "./pages/JoinPartner";
 import NotFound from "./pages/NotFound";
+import AdminPanel from "./pages/AdminPanel";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const AnimatedRoutes = () => {
           <Route path="/" element={<Index />} />
           <Route path="/request-help" element={<RequestHelp />} />
           <Route path="/join-partner" element={<JoinPartner />} />
+          <Route path="/admin" element={<AdminPanel />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </motion.div>

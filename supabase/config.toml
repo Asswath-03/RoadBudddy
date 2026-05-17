@@ -1,7 +1,10 @@
-project_id = "usdiityrkjedxmhquqnh"
+project_id = "dlgxlpjhffksmymjgerx"
 
 [functions.nearby-mechanics]
 verify_jwt = false
 
 [functions.chat]
+verify_jwt = false
+
+[functions.mechanic-admin]
 verify_jwt = false
