@@ -3,12 +3,10 @@ import {
   MapPin, Phone, Navigation, List, Map,
   Loader2, AlertTriangle, Clock, ExternalLink,
   RefreshCw, ChevronDown, MessageCircle, BadgeCheck, Wrench,
-  LocateFixed, X, Info, Signal, Search, Crosshair,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
@@ -16,7 +14,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGPSLocation, forwardGeocode, reverseGeocode } from "@/hooks/useGPSLocation";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Types
@@ -41,8 +38,31 @@ interface Place {
 const PAGE_SIZE = 15;
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Helpers
+   Location helpers
 ───────────────────────────────────────────────────────────────────────────── */
+function getGPSLocation(): Promise<{ lat: number; lng: number }> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) { reject(new Error("UNSUPPORTED")); return; }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        console.log(`[GPS] lat:${coords.latitude} lng:${coords.longitude} ±${coords.accuracy}m`);
+        resolve({ lat: coords.latitude, lng: coords.longitude });
+      },
+      reject,
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
+}
+
+async function getIPLocation(): Promise<{ lat: number; lng: number }> {
+  const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error("IP geo failed");
+  const d = await res.json();
+  if (!d.latitude || !d.longitude) throw new Error("No coords");
+  console.log(`[IPGeo] lat:${d.latitude} lng:${d.longitude} (${d.city})`);
+  return { lat: d.latitude, lng: d.longitude };
+}
+
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371, r = Math.PI / 180;
   const a =
@@ -52,6 +72,7 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/** Fetch RoadBuddy-verified mechanics from Supabase within radiusKm */
 async function fetchVerifiedMechanics(
   userLat: number,
   userLng: number,
@@ -162,7 +183,7 @@ const LeafletMap = ({
     };
   }, []);
 
-  /* update user pin + auto-center map */
+  /* update user pin */
   useEffect(() => {
     if (!mapRef.current || !userLocation) return;
     (async () => {
@@ -171,16 +192,14 @@ const LeafletMap = ({
 
       const icon = L.divIcon({
         className: "",
-        html: `<div style="width:28px;height:28px;background:#2563eb;border:3px solid #fff;
-          border-radius:50%;box-shadow:0 2px 12px rgba(37,99,235,.7);
-          display:flex;align-items:center;justify-content:center;position:relative;">
-          <div style="width:9px;height:9px;background:#fff;border-radius:50%"></div>
-          <div style="position:absolute;width:50px;height:50px;border:2px solid rgba(37,99,235,.3);
-            border-radius:50%;top:-13px;left:-13px;animation:ping 1.5s ease-out infinite"></div>
+        html: `<div style="width:26px;height:26px;background:#2563eb;border:3px solid #fff;
+          border-radius:50%;box-shadow:0 2px 8px rgba(37,99,235,.6);
+          display:flex;align-items:center;justify-content:center">
+          <div style="width:8px;height:8px;background:#fff;border-radius:50%"></div>
         </div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-        popupAnchor: [0, -18],
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
+        popupAnchor: [0, -16],
       });
 
       const marker = L.marker([userLocation.lat, userLocation.lng], { icon, zIndexOffset: 999 })
@@ -189,8 +208,7 @@ const LeafletMap = ({
         .addTo(mapRef.current);
 
       userPinRef.current = marker;
-      // Auto-center map on detected location
-      mapRef.current.flyTo([userLocation.lat, userLocation.lng], 14, { animate: true, duration: 1.2 });
+      mapRef.current.flyTo([userLocation.lat, userLocation.lng], 14, { animate: true, duration: 1 });
     })();
   }, [userLocation]);
 
@@ -248,386 +266,55 @@ const LeafletMap = ({
 };
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Manual Location Entry Modal
-───────────────────────────────────────────────────────────────────────────── */
-const ManualLocationModal = ({
-  onSubmit,
-  onClose,
-  errorMessage,
-}: {
-  onSubmit: (lat: number, lng: number) => void;
-  onClose: () => void;
-  errorMessage: string;
-}) => {
-  const [latStr, setLatStr] = useState("");
-  const [lngStr, setLngStr] = useState("");
-  const [validationErr, setValidationErr] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const lat = parseFloat(latStr);
-    const lng = parseFloat(lngStr);
-    if (isNaN(lat) || lat < -90 || lat > 90) {
-      setValidationErr("Latitude must be between -90 and 90.");
-      return;
-    }
-    if (isNaN(lng) || lng < -180 || lng > 180) {
-      setValidationErr("Longitude must be between -180 and 180.");
-      return;
-    }
-    onSubmit(lat, lng);
-  };
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-        onClick={(e) => e.target === e.currentTarget && onClose()}
-      >
-        <motion.div
-          initial={{ scale: 0.92, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.92, opacity: 0, y: 20 }}
-          transition={{ type: "spring", damping: 24, stiffness: 300 }}
-          className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md p-6"
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-                <LocateFixed className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground text-base">Location Access Needed</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">GPS permission was denied</p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Error notice */}
-          <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs mb-5">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <p>{errorMessage}</p>
-          </div>
-
-          {/* How to enable */}
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 text-xs mb-5">
-            <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <p>
-              To enable GPS: click the 🔒 padlock icon in your browser's address bar →{" "}
-              <strong>Location → Allow</strong>, then refresh and try again.
-            </p>
-          </div>
-
-          {/* Manual entry form */}
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <p className="text-sm font-medium text-foreground">Or enter your coordinates manually:</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Latitude</label>
-                <Input
-                  id="manual-lat"
-                  type="number"
-                  step="any"
-                  placeholder="e.g. 12.9716"
-                  value={latStr}
-                  onChange={(e) => { setLatStr(e.target.value); setValidationErr(""); }}
-                  className="text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Longitude</label>
-                <Input
-                  id="manual-lng"
-                  type="number"
-                  step="any"
-                  placeholder="e.g. 77.5946"
-                  value={lngStr}
-                  onChange={(e) => { setLngStr(e.target.value); setValidationErr(""); }}
-                  className="text-sm"
-                />
-              </div>
-            </div>
-            {validationErr && (
-              <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" /> {validationErr}
-              </p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              💡 Find your coords at{" "}
-              <a
-                href="https://www.google.com/maps"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline text-primary"
-              >
-                Google Maps
-              </a>{" "}
-              (right-click your location → copy coordinates).
-            </p>
-            <div className="flex gap-2 pt-1">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={!latStr || !lngStr}
-                className="flex-1 bg-primary text-primary-foreground"
-              >
-                <MapPin className="w-4 h-4 mr-1.5" />
-                Use This Location
-              </Button>
-            </div>
-          </form>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-};
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   Refine Location Modal — draggable pin + address search
-───────────────────────────────────────────────────────────────────────────── */
-const RefineLocationModal = ({
-  initialLat,
-  initialLng,
-  initialAddress,
-  onConfirm,
-  onClose,
-}: {
-  initialLat: number;
-  initialLng: number;
-  initialAddress: string;
-  onConfirm: (lat: number, lng: number) => void;
-  onClose: () => void;
-}) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markerInstanceRef = useRef<any>(null);
-  const [pinLat, setPinLat] = useState(initialLat);
-  const [pinLng, setPinLng] = useState(initialLng);
-  const [pinAddress, setPinAddress] = useState(initialAddress);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [geocoding, setGeocoding] = useState(false);
-
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainerRef.current || mapInstanceRef.current) return;
-    let mounted = true;
-    (async () => {
-      const L = (await import("leaflet")).default;
-      await import("leaflet/dist/leaflet.css");
-      if (!mounted || !mapContainerRef.current) return;
-
-      const map = L.map(mapContainerRef.current, {
-        center: [initialLat, initialLng],
-        zoom: 17,
-        zoomControl: true,
-      });
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap",
-        maxZoom: 19,
-      }).addTo(map);
-
-      const icon = L.divIcon({
-        className: "",
-        html: `<div style="width:32px;height:32px;background:#2563eb;border:3px solid #fff;
-          border-radius:50% 50% 50% 0;transform:rotate(-45deg);
-          box-shadow:0 3px 10px rgba(37,99,235,.5);display:flex;align-items:center;justify-content:center">
-          <div style="width:10px;height:10px;background:#fff;border-radius:50%;transform:rotate(45deg)"></div>
-        </div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-      });
-
-      const marker = L.marker([initialLat, initialLng], { draggable: true, icon }).addTo(map);
-
-      marker.on("dragend", async () => {
-        const pos = marker.getLatLng();
-        setPinLat(pos.lat);
-        setPinLng(pos.lng);
-        setGeocoding(true);
-        const { formatted } = await reverseGeocode(pos.lat, pos.lng);
-        setPinAddress(formatted);
-        setGeocoding(false);
-      });
-
-      mapInstanceRef.current = map;
-      markerInstanceRef.current = marker;
-      setTimeout(() => map.invalidateSize(), 150);
-    })();
-
-    return () => {
-      mounted = false;
-      mapInstanceRef.current?.remove();
-      mapInstanceRef.current = null;
-      markerInstanceRef.current = null;
-    };
-  }, []);
-
-  // Address search
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setSearching(true);
-    const result = await forwardGeocode(searchQuery);
-    setSearching(false);
-    if (!result) {
-      toast.error("Address not found. Try a different search.");
-      return;
-    }
-    setPinLat(result.lat);
-    setPinLng(result.lng);
-    if (markerInstanceRef.current && mapInstanceRef.current) {
-      markerInstanceRef.current.setLatLng([result.lat, result.lng]);
-      mapInstanceRef.current.flyTo([result.lat, result.lng], 17, { animate: true, duration: 0.8 });
-    }
-    setGeocoding(true);
-    const { formatted } = await reverseGeocode(result.lat, result.lng);
-    setPinAddress(formatted);
-    setGeocoding(false);
-  };
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-        onClick={(e) => e.target === e.currentTarget && onClose()}
-      >
-        <motion.div
-          initial={{ scale: 0.92, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.92, opacity: 0, y: 20 }}
-          transition={{ type: "spring", damping: 24, stiffness: 300 }}
-          className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg p-5"
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                <Crosshair className="w-4.5 h-4.5 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground text-base">Refine Your Location</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Drag the pin or search an address</p>
-              </div>
-            </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Address search */}
-          <form onSubmit={handleSearch} className="flex gap-2 mb-3">
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search address, landmark, or place…"
-              className="text-sm flex-1"
-            />
-            <Button type="submit" size="sm" disabled={searching} className="shrink-0">
-              {searching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-            </Button>
-          </form>
-
-          {/* Map */}
-          <div ref={mapContainerRef} className="w-full h-64 rounded-xl border border-border overflow-hidden mb-3" style={{ zIndex: 0 }} />
-
-          {/* Pin address */}
-          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-secondary border border-border text-sm mb-3">
-            <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary" />
-            <div className="flex-1 min-w-0">
-              {geocoding ? (
-                <span className="text-muted-foreground text-xs flex items-center gap-1">
-                  <Loader2 className="w-3 h-3 animate-spin" /> Looking up address…
-                </span>
-              ) : (
-                <>
-                  <p className="text-xs font-medium text-foreground leading-snug">{pinAddress}</p>
-                  <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{pinLat.toFixed(6)}, {pinLng.toFixed(6)}</p>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-            <Button onClick={() => onConfirm(pinLat, pinLng)} disabled={geocoding} className="flex-1 bg-primary text-primary-foreground">
-              <MapPin className="w-4 h-4 mr-1.5" />
-              Confirm Location
-            </Button>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-};
-
-/* ─────────────────────────────────────────────────────────────────────────────
    Main component
 ───────────────────────────────────────────────────────────────────────────── */
 const NearbyMechanics = () => {
   const [allPlaces, setAllPlaces] = useState<Place[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locSource, setLocSource] = useState<"gps" | "ip" | null>(null);
   const [radius, setRadius] = useState("10000");
   const [view, setView] = useState<"list" | "map">("list");
 
-  const {
-    location: userLocation,
-    locSource,
-    locating,
-    loadingLabel,
-    liveAccuracy,
-    phase,
-    gpsError,
-    needsManualEntry,
-    setNeedsManualEntry,
-    showRefineModal,
-    setShowRefineModal,
-    detectLocation,
-    applyManualLocation,
-    applyRefinedLocation,
-  } = useGPSLocation();
+  /* ── Location detection ───────────────────────────────────────────── */
+  const detectLocation = useCallback(async () => {
+    setLocating(true);
+    setError(null);
+    try {
+      const loc = await getGPSLocation();
+      setUserLocation(loc);
+      setLocSource("gps");
+    } catch {
+      try {
+        const loc = await getIPLocation();
+        setUserLocation(loc);
+        setLocSource("ip");
+        toast.info("Using approximate location (GPS unavailable).");
+      } catch {
+        const gpsErr = await getGPSLocation().catch((e) => e);
+        const m: Record<number, string> = {
+          1: "Location permission denied. Please allow access in browser settings.",
+          2: "Could not determine your location.",
+          3: "Location request timed out. Please try again.",
+        };
+        setError(m[gpsErr?.code ?? -1] ?? "Unable to detect location.");
+      }
+    } finally {
+      setLocating(false);
+    }
+  }, []);
 
-  /* ── Start location detection on mount ─────────────────────────────── */
   useEffect(() => { detectLocation(); }, [detectLocation]);
 
-  /* ── Toasts on location source change ───────────────────────────────── */
-  useEffect(() => {
-    if (locSource === "manual") {
-      toast.success("Using your manually entered location.");
-    }
-    if (phase === "done" && locSource === "gps" && userLocation) {
-      const acc = userLocation.accuracy;
-      if (acc > 0 && acc > 100) {
-        toast.warning(`GPS accuracy is ±${Math.round(acc)}m — results may be slightly off.`);
-      }
-    }
-  }, [locSource, phase, userLocation]);
-
-  /* ── Fetch mechanics ────────────────────────────────────────────────── */
+  /* ── Fetch mechanics (Overpass API directly) ──────────────────────── */
   const fetchNearby = useCallback(async () => {
     if (!userLocation) return;
     setLoading(true);
-    setFetchError(null);
+    setError(null);
     setNotice(null);
     setVisibleCount(PAGE_SIZE);
 
@@ -712,25 +399,25 @@ const NearbyMechanics = () => {
       const uniqueOsm = osmPlaces.filter(
         (p) => !verifiedNames.has(p.name.toLowerCase().trim())
       );
-      const combined = [
-        ...verified.sort((a, b) => a.distance_km - b.distance_km),
-        ...uniqueOsm.sort((a, b) => a.distance_km - b.distance_km),
-      ];
+      const verifiedSorted = [...verified].sort((a, b) => a.distance_km - b.distance_km);
+      const osmSorted = [...uniqueOsm].sort((a, b) => a.distance_km - b.distance_km);
+      const combined = [...verifiedSorted, ...osmSorted];
 
-      console.log(`[Fetch] ${verified.length} verified + ${uniqueOsm.length} OSM = ${combined.length} total`);
+      console.log(`[Fetch] ${verified.length} verified + ${osmSorted.length} OSM = ${combined.length} total`);
       setAllPlaces(combined);
 
       if (combined.length === 0) {
         toast.info("No mechanics found. Try increasing the search radius.");
       } else {
+        const vCount = verified.length;
         toast.success(
           `Found ${combined.length} mechanic${combined.length !== 1 ? "s" : ""} nearby` +
-          (verified.length > 0 ? ` (${verified.length} verified ⭐)` : "") + "."
+          (vCount > 0 ? ` (${vCount} verified ⭐)` : "") + "."
         );
       }
     } catch (e: any) {
       console.error("[Fetch] error:", e);
-      setFetchError(e.message || "Failed to fetch nearby mechanics");
+      setError(e.message || "Failed to fetch nearby mechanics");
       toast.error("Failed to fetch nearby mechanics.");
     } finally {
       setLoading(false);
@@ -741,15 +428,16 @@ const NearbyMechanics = () => {
     if (userLocation) fetchNearby();
   }, [userLocation, fetchNearby]);
 
-  /* ── Helpers ──────────────────────────────────────────────────────── */
+  /* ── Helpers ─────────────────────────────────────────────────────── */
   const openMaps = (p: Place) =>
     window.open(
       `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`,
       "_blank", "noopener,noreferrer"
     );
 
+  // Strip everything except digits (and leading +) for tel/wa.me
   const cleanPhone = (raw: string) => raw.replace(/[\s\-().]/g, "");
-  const waPhone = (raw: string) => raw.replace(/[^0-9]/g, "");
+  const waPhone = (raw: string) => raw.replace(/[^0-9]/g, "");  // wa.me needs digits only
 
   const catColor = (cat: string) => {
     if (cat === "Tyre Shop") return "border-yellow-500 text-yellow-600";
@@ -766,29 +454,6 @@ const NearbyMechanics = () => {
   return (
     <div className="space-y-4">
 
-      {/* Manual location modal (permission denied fallback) */}
-      {needsManualEntry && gpsError && (
-        <ManualLocationModal
-          errorMessage={gpsError.message}
-          onSubmit={(lat, lng) => {
-            setNeedsManualEntry(false);
-            applyManualLocation(lat, lng);
-          }}
-          onClose={() => setNeedsManualEntry(false)}
-        />
-      )}
-
-      {/* Refine location modal (drag pin / search address) */}
-      {showRefineModal && userLocation && (
-        <RefineLocationModal
-          initialLat={userLocation.lat}
-          initialLng={userLocation.lng}
-          initialAddress={userLocation.address || `${userLocation.lat.toFixed(6)}, ${userLocation.lng.toFixed(6)}`}
-          onConfirm={(lat, lng) => applyRefinedLocation(lat, lng)}
-          onClose={() => setShowRefineModal(false)}
-        />
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
@@ -802,7 +467,7 @@ const NearbyMechanics = () => {
             {allPlaces.length > 0 && (
               <p className="text-xs text-muted-foreground">
                 {allPlaces.length} found · verified first
-                {locSource === "manual" && " · manual location"}
+                {locSource === "ip" && " · approximate location"}
               </p>
             )}
           </div>
@@ -843,127 +508,21 @@ const NearbyMechanics = () => {
         </div>
       )}
 
-      {/* ── Locating state ── */}
+      {/* Locating state */}
       {locating && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`flex items-center gap-3 p-4 rounded-xl border text-sm ${phase === "improving"
-            ? "bg-amber-50 border-amber-200 text-amber-700"
-            : "bg-blue-50 border-blue-200 text-blue-700"
-            }`}
-        >
-          <div className="relative shrink-0">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            <div className={`absolute inset-0 rounded-full border-2 animate-ping opacity-40 ${phase === "improving" ? "border-amber-400" : "border-blue-300"
-              }`} />
-          </div>
-          <div className="flex-1">
-            <p className="font-medium">{loadingLabel}</p>
-            {phase === "getting" && (
-              <p className="text-xs mt-0.5 opacity-70">
-                enableHighAccuracy · timeout: 15s · maximumAge: 0 · Please allow location access if prompted
-              </p>
-            )}
-            {phase === "improving" && liveAccuracy !== null && (
-              <div className="mt-1.5 flex items-center gap-2">
-                <div className="flex-1 h-1.5 bg-amber-200 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-amber-500 rounded-full"
-                    initial={{ width: "100%" }}
-                    animate={{ width: `${Math.max(5, Math.min(100, (100 / liveAccuracy) * 100))}%` }}
-                    transition={{ duration: 0.6 }}
-                  />
-                </div>
-                <span className="text-xs font-mono shrink-0">±{Math.round(liveAccuracy)}m</span>
-              </div>
-            )}
-            {phase === "geocoding" && (
-              <p className="text-xs mt-0.5 opacity-70">Looking up your street address…</p>
-            )}
-          </div>
-        </motion.div>
-      )}
-
-      {/* ── Detected location info bar ── */}
-      {userLocation && !locating && (
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`flex items-start gap-3 p-3 rounded-xl border text-sm ${locSource === "gps" && userLocation.accuracy <= 100
-            ? "bg-green-50 border-green-200 text-green-800"
-            : locSource === "gps" && userLocation.accuracy > 100
-              ? "bg-amber-50 border-amber-200 text-amber-800"
-              : "bg-purple-50 border-purple-200 text-purple-800"
-            }`}
-        >
-          <LocateFixed className="w-4 h-4 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium">
-                {locSource === "gps" ? "📡 GPS Location Detected" : "✏️ Manual Location"}
-              </span>
-              {locSource === "gps" && userLocation.accuracy > 0 && (
-                <span className={`inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 ${userLocation.accuracy <= 20
-                  ? "bg-green-200 text-green-800"
-                  : userLocation.accuracy <= 100
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-amber-100 text-amber-700"
-                  }`}>
-                  <Signal className="w-2.5 h-2.5" />
-                  ±{Math.round(userLocation.accuracy)}m
-                </span>
-              )}
-              <span className="text-xs opacity-60 font-mono">
-                {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
-              </span>
-            </div>
-            {userLocation.address && (
-              <p className="text-xs mt-0.5 opacity-80 truncate">
-                📍 {userLocation.address}
-              </p>
-            )}
-            {locSource === "gps" && userLocation.accuracy > 100 && (
-              <p className="text-xs mt-0.5 text-amber-600">
-                ⚠️ Low accuracy — move outdoors or enable Precise Location for better results.
-              </p>
-            )}
-          </div>
-          <button
-            onClick={() => setNeedsManualEntry(true)}
-            className="text-xs underline shrink-0 opacity-70 hover:opacity-100 transition-opacity"
-          >
-            Change
-          </button>
-        </motion.div>
-      )}
-
-
-      {/* ── GPS error (non-permission, no fallback available) ── */}
-      {gpsError && !needsManualEntry && !userLocation && !locating && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-          <div>
-            <p>{gpsError.message}</p>
-            <div className="flex gap-3 mt-2">
-              <button onClick={detectLocation} className="underline text-xs">
-                Try again
-              </button>
-              <button onClick={() => setNeedsManualEntry(true)} className="underline text-xs">
-                Enter manually
-              </button>
-            </div>
-          </div>
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary border border-border text-muted-foreground text-sm">
+          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+          Detecting your location…
         </div>
       )}
 
-      {/* ── Fetch error ── */}
-      {fetchError && !loading && (
+      {/* Error */}
+      {error && !loading && (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <div>
-            <p>{fetchError}</p>
-            <button onClick={fetchNearby} className="underline text-xs mt-1">
+            <p>{error}</p>
+            <button onClick={detectLocation} className="underline text-xs mt-1">
               Try again
             </button>
           </div>
@@ -1035,6 +594,15 @@ const NearbyMechanics = () => {
                                   )}
                                 </div>
 
+                                {/* Garage name (for verified partners) */}
+                                {p.verified && p.name && (
+                                  <div className="flex items-center gap-1 text-xs text-slate-600 mt-0.5">
+                                    <Wrench className="w-3 h-3 text-slate-400" />
+                                    <span className="font-medium">{p.name}</span>
+                                  </div>
+                                )}
+
+                                {/* Address */}
                                 {p.address && (
                                   <p className="text-xs text-muted-foreground mt-0.5 truncate flex items-center gap-1">
                                     <MapPin className="w-3 h-3 shrink-0" />
@@ -1075,7 +643,7 @@ const NearbyMechanics = () => {
                               </div>
                             )}
 
-                            {/* Phone display */}
+                            {/* Phone number display */}
                             {p.phone && (
                               <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
                                 <Phone className="w-3.5 h-3.5 text-green-600 shrink-0" />
@@ -1097,7 +665,10 @@ const NearbyMechanics = () => {
                               {p.phone && (
                                 <Button
                                   size="sm"
-                                  onClick={() => { window.location.href = `tel:${cleanPhone(p.phone!)}`; }}
+                                  onClick={() => {
+                                    // tel: must use location.href — window.open blocks it in browsers
+                                    window.location.href = `tel:${cleanPhone(p.phone!)}`;
+                                  }}
                                   className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs h-8 min-w-[90px]"
                                 >
                                   <Phone className="w-3 h-3 mr-1" />
